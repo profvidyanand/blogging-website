@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": "worker.ts",
+  "name": "ai-blog-platform",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "ai-blog-platform" }],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "",
+    "AI_API_BASE_URL": "https://api.openai.com/v1",
+    "AI_MODEL": "gpt-4o-mini"
+  }
+}

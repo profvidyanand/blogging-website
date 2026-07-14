@@ -1,0 +1,277 @@
+/* Blog article typography — reading-optimized layout with math support */
+
+.blog-content {
+  --blog-text: oklch(0.28 0.01 260);
+  --blog-muted: oklch(0.52 0.01 260);
+  --blog-border: oklch(0.9 0.005 260);
+  --blog-accent: oklch(0.45 0.12 250);
+  --blog-code-bg: oklch(0.96 0.005 260);
+
+  color: var(--blog-text);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+  max-width: 68ch;
+}
+
+.blog-content > *:first-child {
+  margin-top: 0;
+}
+
+.blog-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Headings */
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.blog-content h5,
+.blog-content h6 {
+  color: oklch(0.18 0.01 260);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin-top: 2.25em;
+  margin-bottom: 0.75em;
+  scroll-margin-top: 5rem;
+}
+
+.blog-content h1 {
+  font-size: 2rem;
+  margin-top: 0;
+}
+
+.blog-content h2 {
+  font-size: 1.625rem;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--blog-border);
+}
+
+.blog-content h3 {
+  font-size: 1.35rem;
+}
+
+.blog-content h4 {
+  font-size: 1.15rem;
+}
+
+/* Body text */
+.blog-content p {
+  margin-top: 0;
+  margin-bottom: 1.35em;
+}
+
+.blog-content strong {
+  font-weight: 650;
+  color: oklch(0.2 0.01 260);
+}
+
+.blog-content em {
+  font-style: italic;
+}
+
+.blog-content a {
+  color: var(--blog-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: oklch(0.45 0.12 250 / 0.35);
+  transition: text-decoration-color 0.15s;
+}
+
+.blog-content a:hover {
+  text-decoration-color: var(--blog-accent);
+}
+
+/* Lists */
+.blog-content ul,
+.blog-content ol {
+  margin: 0 0 1.35em;
+  padding-left: 1.5em;
+}
+
+.blog-content li {
+  margin-bottom: 0.45em;
+}
+
+.blog-content li::marker {
+  color: var(--blog-muted);
+}
+
+.blog-content ul ul,
+.blog-content ol ol,
+.blog-content ul ol,
+.blog-content ol ul {
+  margin-top: 0.45em;
+  margin-bottom: 0;
+}
+
+/* Blockquote */
+.blog-content blockquote {
+  margin: 1.75em 0;
+  padding: 0.75em 0 0.75em 1.25em;
+  border-left: 3px solid var(--blog-accent);
+  color: var(--blog-muted);
+  font-style: italic;
+}
+
+.blog-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code */
+.blog-content code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875em;
+  background: var(--blog-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3em;
+  border: 1px solid var(--blog-border);
+}
+
+.blog-content pre {
+  margin: 1.75em 0;
+  padding: 1.1em 1.25em;
+  overflow-x: auto;
+  background: oklch(0.17 0.01 260);
+  color: oklch(0.92 0.005 260);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.blog-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Tables */
+.blog-content table {
+  width: 100%;
+  margin: 1.75em 0;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.blog-content th,
+.blog-content td {
+  padding: 0.65em 0.85em;
+  border: 1px solid var(--blog-border);
+  text-align: left;
+}
+
+.blog-content th {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 600;
+  background: oklch(0.97 0.005 260);
+}
+
+.blog-content tr:nth-child(even) td {
+  background: oklch(0.985 0.003 260);
+}
+
+/* Images & figures */
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.625rem;
+  margin: 1.75em auto;
+  display: block;
+}
+
+.blog-content figure {
+  margin: 1.75em 0;
+}
+
+.blog-content figcaption {
+  margin-top: 0.5em;
+  font-size: 0.875rem;
+  color: var(--blog-muted);
+  text-align: center;
+}
+
+.blog-content hr {
+  margin: 2.5em 0;
+  border: none;
+  border-top: 1px solid var(--blog-border);
+}
+
+/* Math — KaTeX output */
+.blog-content .math-display {
+  margin: 1.75em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em 0;
+  text-align: center;
+}
+
+.blog-content .math-inline {
+  display: inline;
+}
+
+.blog-content .katex {
+  font-size: 1.05em;
+}
+
+.blog-content .math-display .katex {
+  font-size: 1.15em;
+}
+
+.blog-content .math-error {
+  color: oklch(0.55 0.2 25);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+}
+
+/* MathML — native browser rendering */
+.blog-content math {
+  font-size: 1.05em;
+}
+
+.blog-content math[display="block"],
+.blog-content math[display="true"] {
+  display: block;
+  margin: 1.75em auto;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.blog-content math:not([display="block"]):not([display="true"]) {
+  display: inline;
+  margin: 0 0.1em;
+}
+
+/* Article shell (preview + public) */
+.blog-article {
+  --blog-article-radius: 1rem;
+}
+
+.blog-article-header {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.blog-article-title {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.875rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: oklch(0.15 0.01 260);
+}
+
+.blog-article-lead {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.25rem;
+  line-height: 1.65;
+  color: var(--blog-muted, oklch(0.45 0.01 260));
+}
+
+.blog-faq summary {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}

@@ -1,0 +1,99 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { ensureUniqueSlug } from "@/lib/slug";
+import { logActivity } from "@/lib/activity";
+import { jsonError, requireAdminApi } from "@/lib/api";
+import type { Database } from "@/lib/types";
+
+type Ctx = { params: Promise<{ id: string }> };
+type ArticleUpdate = Database["public"]["Tables"]["articles"]["Update"];
+
+const patchSchema = z.object({
+  title: z.string().min(1).optional(),
+  slug: z.string().min(1).optional(),
+  seoTitle: z.string().nullable().optional(),
+  metaDescription: z.string().nullable().optional(),
+  summary: z.string().nullable().optional(),
+  content: z.string().optional(),
+  faq: z
+    .array(z.object({ question: z.string(), answer: z.string() }))
+    .optional(),
+  tags: z.array(z.string()).optional(),
+  featuredImage: z.string().nullable().optional(),
+});
+
+export async function PATCH(request: Request, context: Ctx) {
+  const auth = await requireAdminApi();
+  if ("response" in auth) return auth.response;
+
+  const { id } = await context.params;
+  const body = await request.json().catch(() => null);
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonError(parsed.error.issues[0]?.message ?? "Invalid body");
+  }
+
+  const supabase = await createClient();
+  const d = parsed.data;
+  const updates: ArticleUpdate = {};
+
+  if (d.title !== undefined) updates.title = d.title;
+  if (d.seoTitle !== undefined) updates.seo_title = d.seoTitle;
+  if (d.metaDescription !== undefined) updates.meta_description = d.metaDescription;
+  if (d.summary !== undefined) updates.summary = d.summary;
+  if (d.content !== undefined) updates.content = d.content;
+  if (d.faq !== undefined) updates.faq = d.faq;
+  if (d.tags !== undefined) updates.tags = d.tags;
+  if (d.featuredImage !== undefined) updates.featured_image = d.featuredImage;
+
+  if (d.slug !== undefined) {
+    updates.slug = await ensureUniqueSlug(d.slug, async (candidate) => {
+      const { data } = await supabase
+        .from("articles")
+        .select("id")
+        .eq("slug", candidate)
+        .neq("id", id)
+        .maybeSingle();
+      return !!data;
+    });
+  }
+
+  const { data: article, error } = await supabase
+    .from("articles")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+
+  if (error) return jsonError(error.message, 500);
+  if (!article) return jsonError("Article not found", 404);
+
+  await logActivity(supabase, {
+    adminId: auth.admin.id,
+    action: "article.update",
+    entityType: "article",
+    entityId: id,
+  });
+
+  return NextResponse.json({ article });
+}
+
+export async function DELETE(_request: Request, context: Ctx) {
+  const auth = await requireAdminApi();
+  if ("response" in auth) return auth.response;
+
+  const { id } = await context.params;
+  const supabase = await createClient();
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  if (error) return jsonError(error.message, 500);
+
+  await logActivity(supabase, {
+    adminId: auth.admin.id,
+    action: "article.delete",
+    entityType: "article",
+    entityId: id,
+  });
+
+  return NextResponse.json({ success: true });
+}
