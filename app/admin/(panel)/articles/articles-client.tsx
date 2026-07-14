@@ -3,12 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { ScheduleDialog } from "@/components/admin/schedule-dialog";
+import { StatusBadge } from "@/components/admin/status-badge";
+import { toast } from "@/lib/toast";
 import type { Article, Category } from "@/lib/types";
 
 type Row = Article & { categoryName?: string };
@@ -38,10 +48,11 @@ export function ArticlesClient({
     router.push(`/admin/articles?${params.toString()}`);
   }
 
-  async function postAction(path: string) {
+  async function postAction(path: string, successMsg: string) {
     const res = await fetch(path, { method: "POST" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Action failed");
+    toast.success(successMsg);
     router.refresh();
   }
 
@@ -52,6 +63,7 @@ export function ArticlesClient({
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Delete failed");
+    toast.success("Article deleted");
     router.refresh();
   }
 
@@ -64,61 +76,76 @@ export function ArticlesClient({
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Schedule failed");
+    toast.success("Article scheduled");
     router.refresh();
   }
 
   return (
     <div className="space-y-4">
-      <form
-        onSubmit={applyFilters}
-        className="flex flex-wrap items-end gap-3 rounded-lg border bg-white p-3"
-      >
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="flex h-8 rounded-lg border border-input px-2 text-sm"
+      <Card className="shadow-card">
+        <CardContent className="pt-6">
+          <form
+            onSubmit={applyFilters}
+            className="flex flex-wrap items-end gap-4"
           >
-            <option value="">All</option>
-            <option value="draft">Draft</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="published">Published</option>
-            <option value="unpublished">Unpublished</option>
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Category</label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="flex h-8 rounded-lg border border-input px-2 text-sm"
-          >
-            <option value="">All</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Search</label>
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Title…"
-            className="w-48"
-          />
-        </div>
-        <Button type="submit" size="sm">
-          Filter
-        </Button>
-      </form>
+            <div className="space-y-1.5">
+              <Label htmlFor="filter-status" className="text-caption">
+                Status
+              </Label>
+              <select
+                id="filter-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="flex h-10 min-w-[140px] rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">All</option>
+                <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="published">Published</option>
+                <option value="unpublished">Unpublished</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="filter-category" className="text-caption">
+                Category
+              </Label>
+              <select
+                id="filter-category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="flex h-10 min-w-[160px] rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">All</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="filter-q" className="text-caption">
+                Search
+              </Label>
+              <Input
+                id="filter-q"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Title…"
+                className="w-48"
+              />
+            </div>
+            <Button type="submit" className="min-h-10">
+              Filter
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <DataTable
         rows={articles}
-        emptyMessage="No articles found."
+        emptyTitle="No articles found"
+        emptyMessage="Try adjusting your filters."
         columns={[
           {
             key: "title",
@@ -126,7 +153,7 @@ export function ArticlesClient({
             cell: (row) => (
               <Link
                 href={`/admin/articles/${row.id}`}
-                className="font-medium hover:underline"
+                className="font-medium text-primary hover:underline"
               >
                 {row.title}
               </Link>
@@ -140,64 +167,71 @@ export function ArticlesClient({
           {
             key: "status",
             header: "Status",
-            cell: (row) => <Badge variant="secondary">{row.status}</Badge>,
+            cell: (row) => <StatusBadge status={row.status} />,
           },
           {
             key: "actions",
-            header: "Actions",
+            header: "",
+            className: "w-12",
             cell: (row) => (
-              <div className="flex flex-wrap gap-1">
-                <Link
-                  href={`/admin/articles/${row.id}`}
-                  className="inline-flex h-7 items-center rounded-lg border px-2.5 text-[0.8rem] hover:bg-muted"
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="ghost" size="icon-sm" />
+                  }
                 >
-                  Preview
-                </Link>
-                <Link
-                  href={`/admin/articles/${row.id}/edit`}
-                  className="inline-flex h-7 items-center rounded-lg border px-2.5 text-[0.8rem] hover:bg-muted"
-                >
-                  Edit
-                </Link>
-                {row.status !== "published" ? (
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      postAction(`/api/admin/articles/${row.id}/publish`).catch(
-                        alert,
-                      )
-                    }
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">Actions</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    render={<Link href={`/admin/articles/${row.id}`} />}
                   >
-                    Publish
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      postAction(
-                        `/api/admin/articles/${row.id}/unpublish`,
-                      ).catch(alert)
-                    }
+                    Preview
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    render={<Link href={`/admin/articles/${row.id}/edit`} />}
                   >
-                    Unpublish
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setScheduleId(row.id)}
-                >
-                  Schedule
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setDeleteId(row.id)}
-                >
-                  Delete
-                </Button>
-              </div>
+                    Edit
+                  </DropdownMenuItem>
+                  {row.status !== "published" ? (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        postAction(
+                          `/api/admin/articles/${row.id}/publish`,
+                          "Article published"
+                        ).catch((e) =>
+                          toast.error(e instanceof Error ? e.message : "Failed")
+                        )
+                      }
+                    >
+                      Publish
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        postAction(
+                          `/api/admin/articles/${row.id}/unpublish`,
+                          "Article unpublished"
+                        ).catch((e) =>
+                          toast.error(e instanceof Error ? e.message : "Failed")
+                        )
+                      }
+                    >
+                      Unpublish
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => setScheduleId(row.id)}>
+                    Schedule
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setDeleteId(row.id)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ),
           },
         ]}

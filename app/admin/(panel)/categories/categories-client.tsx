@@ -3,16 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { StatusBadge } from "@/components/admin/status-badge";
 import {
   CategoryForm,
   type CategoryFormValues,
@@ -71,7 +78,8 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
 
       <DataTable
         rows={initial}
-        emptyMessage="No categories yet. Create one to get started."
+        emptyTitle="No categories yet"
+        emptyMessage="Create one to get started."
         columns={[
           {
             key: "name",
@@ -79,7 +87,7 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
             cell: (row) => (
               <Link
                 href={`/admin/categories/${row.id}`}
-                className="font-medium hover:underline"
+                className="font-medium text-primary hover:underline"
               >
                 {row.name}
               </Link>
@@ -89,17 +97,13 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
             key: "slug",
             header: "Slug",
             cell: (row) => (
-              <code className="text-xs text-zinc-500">{row.slug}</code>
+              <code className="text-caption">{row.slug}</code>
             ),
           },
           {
             key: "status",
             header: "Status",
-            cell: (row) => (
-              <Badge variant={row.status === "active" ? "default" : "secondary"}>
-                {row.status}
-              </Badge>
-            ),
+            cell: (row) => <StatusBadge status={row.status} />,
           },
           {
             key: "topics",
@@ -113,24 +117,30 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
           },
           {
             key: "actions",
-            header: "Actions",
+            header: "",
+            className: "w-12",
             cell: (row) => (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditRow(row)}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="ghost" size="icon-sm" />
+                  }
                 >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setDeleteRow(row)}
-                >
-                  Delete
-                </Button>
-              </div>
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">Actions</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditRow(row)}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setDeleteRow(row)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ),
           },
         ]}

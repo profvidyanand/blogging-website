@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
 import { SearchBar } from "@/components/public/search-bar";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Search } from "lucide-react";
 import type { Article, Category } from "@/lib/types";
 
 type Props = { searchParams: Promise<{ q?: string }> };
@@ -39,29 +41,49 @@ export default async function SearchPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Search</h1>
-      <SearchBar initialQuery={q} />
+    <div className="space-y-8">
+      <section className="space-y-4 text-center">
+        <h1 className="text-h1">Search</h1>
+        <p className="text-body text-muted-foreground">
+          Find published articles across all categories.
+        </p>
+        <div className="mx-auto max-w-xl">
+          <SearchBar initialQuery={q} />
+        </div>
+      </section>
+
       {q.trim() ? (
-        <p className="text-sm text-zinc-500">
-          {posts.length} result{posts.length === 1 ? "" : "s"} for “{q.trim()}”
+        <p className="text-body-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{posts.length}</span>{" "}
+          result{posts.length === 1 ? "" : "s"} for &ldquo;{q.trim()}&rdquo;
         </p>
       ) : (
-        <p className="text-zinc-500">Enter a query to search published articles.</p>
+        <p className="text-center text-muted-foreground">
+          Enter a query to search published articles.
+        </p>
       )}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((post) => (
-          <BlogCard
-            key={post.id}
-            title={post.title}
-            slug={post.slug}
-            summary={post.summary}
-            featuredImage={post.featured_image}
-            categoryName={catMap.get(post.category_id)}
-            publishedAt={post.published_at}
-          />
-        ))}
-      </div>
+
+      {q.trim() && posts.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No results found"
+          description={`We couldn't find any articles matching "${q.trim()}".`}
+        />
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post) => (
+            <BlogCard
+              key={post.id}
+              title={post.title}
+              slug={post.slug}
+              summary={post.summary}
+              featuredImage={post.featured_image}
+              categoryName={catMap.get(post.category_id)}
+              publishedAt={post.published_at}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

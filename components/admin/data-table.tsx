@@ -6,6 +6,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { InboxIcon } from "lucide-react";
 
 export type DataTableColumn<T> = {
   key: string;
@@ -18,24 +20,28 @@ export function DataTable<T extends { id: string }>({
   columns,
   rows,
   emptyMessage = "No rows found.",
+  emptyTitle = "Nothing here yet",
 }: {
   columns: DataTableColumn<T>[];
   rows: T[];
   emptyMessage?: string;
+  emptyTitle?: string;
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500">
-        {emptyMessage}
-      </div>
+      <EmptyState
+        icon={InboxIcon}
+        title={emptyTitle}
+        description={emptyMessage}
+      />
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-card">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             {columns.map((col) => (
               <TableHead key={col.key} className={col.className}>
                 {col.header}
@@ -45,7 +51,7 @@ export function DataTable<T extends { id: string }>({
         </TableHeader>
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.id}>
+            <TableRow key={row.id} className="hover:bg-muted/50">
               {columns.map((col) => (
                 <TableCell key={col.key} className={col.className}>
                   {col.cell(row)}

@@ -25,7 +25,7 @@ export default async function EditArticlePage({ params }: Props) {
     <div>
       <Link
         href={`/admin/articles/${articleId}`}
-        className="text-sm text-zinc-500 hover:text-zinc-800"
+        className="inline-flex text-body-sm text-muted-foreground hover:text-foreground"
       >
         ← Preview
       </Link>

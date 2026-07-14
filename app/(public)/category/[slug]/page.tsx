@@ -1,6 +1,12 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { FileText } from "lucide-react";
+import { getCategoryAccent } from "@/lib/category-colors";
 import type { Article, Category } from "@/lib/types";
 
 type Props = {
@@ -38,18 +44,29 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const posts = (articles ?? []) as Article[];
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / pageSize));
+  const accent = getCategoryAccent(cat.name);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold">{cat.name}</h1>
+    <div className="space-y-8">
+      <header className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-background px-6 py-8 sm:px-8">
+        <Badge className={`${accent.bg} ${accent.text}`}>Category</Badge>
+        <h1 className="mt-3 text-h1">{cat.name}</h1>
         {cat.description ? (
-          <p className="mt-2 text-zinc-600">{cat.description}</p>
+          <p className="mt-3 max-w-2xl text-body text-muted-foreground">
+            {cat.description}
+          </p>
         ) : null}
+        <p className="mt-2 text-caption">
+          {count ?? 0} article{(count ?? 0) === 1 ? "" : "s"}
+        </p>
       </header>
 
       {posts.length === 0 ? (
-        <p className="text-zinc-500">No published articles in this category.</p>
+        <EmptyState
+          icon={FileText}
+          title="No articles yet"
+          description="No published articles in this category."
+        />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => (
@@ -67,19 +84,25 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       )}
 
       {totalPages > 1 ? (
-        <nav className="flex justify-center gap-2 text-sm">
+        <nav className="flex items-center justify-center gap-3">
           {page > 1 ? (
-            <a href={`/category/${slug}?page=${page - 1}`} className="underline">
+            <Link
+              href={`/category/${slug}?page=${page - 1}`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               Previous
-            </a>
+            </Link>
           ) : null}
-          <span>
+          <span className="text-body-sm text-muted-foreground">
             Page {page} of {totalPages}
           </span>
           {page < totalPages ? (
-            <a href={`/category/${slug}?page=${page + 1}`} className="underline">
+            <Link
+              href={`/category/${slug}?page=${page + 1}`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               Next
-            </a>
+            </Link>
           ) : null}
         </nav>
       ) : null}

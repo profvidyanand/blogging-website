@@ -77,7 +77,7 @@ export function CategoryForm({
           <option value="inactive">Inactive</option>
         </select>
       </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>

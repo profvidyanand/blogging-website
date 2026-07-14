@@ -2,18 +2,70 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EditTopicDialog } from "@/components/admin/edit-topic-dialog";
-import { GenerateArticleButton } from "@/components/admin/generate-article-button";
+import { StatusBadge } from "@/components/admin/status-badge";
+import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import type { Topic } from "@/lib/types";
+
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  destructive,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+  children: React.ReactNode;
+}) {
+  const button = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer disabled:cursor-not-allowed",
+        destructive && "text-destructive hover:text-destructive"
+      )}
+    >
+      {children}
+    </Button>
+  );
+
+  return (
+    <Tooltip>
+      {disabled ? (
+        <TooltipTrigger render={<span className="inline-flex cursor-not-allowed" />}>
+          {button}
+        </TooltipTrigger>
+      ) : (
+        <TooltipTrigger render={button} />
+      )}
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function TopicTable({ topics }: { topics: Topic[] }) {
   const router = useRouter();
   const [editTopic, setEditTopic] = useState<Topic | null>(null);
   const [deleteTopic, setDeleteTopic] = useState<Topic | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   async function saveTopic(text: string) {
     if (!editTopic) return;
@@ -37,53 +89,86 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
     router.refresh();
   }
 
+  async function generateArticle(topicId: string) {
+    setGeneratingId(topicId);
+    try {
+      const res = await fetch(`/api/admin/topics/${topicId}/generate-article`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Generation failed");
+      toast.success("Article generated");
+      router.push(`/admin/articles/${data.article.id}`);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setGeneratingId(null);
+    }
+  }
+
   return (
-    <>
+    <TooltipProvider delay={300}>
       <DataTable
         rows={topics}
-        emptyMessage="No topics yet. Use Get Topics to generate some."
+        emptyTitle="No topics yet"
+        emptyMessage="Generate topics with AI or add one manually."
         columns={[
           {
             key: "topic",
             header: "Topic",
-            cell: (row) => <span className="max-w-md">{row.topic}</span>,
-          },
-          {
-            key: "status",
-            header: "Status",
             cell: (row) => (
-              <Badge
-                variant={row.status === "generated" ? "secondary" : "default"}
-              >
-                {row.status}
-              </Badge>
+              <span className="block max-w-xl whitespace-normal py-1 leading-snug">
+                {row.topic}
+              </span>
             ),
           },
           {
             key: "actions",
-            header: "Actions",
-            cell: (row) => (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditTopic(row)}
-                >
-                  Edit
-                </Button>
-                <GenerateArticleButton
-                  topicId={row.id}
-                  disabled={row.status === "generated"}
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setDeleteTopic(row)}
-                >
-                  Delete
-                </Button>
-              </div>
-            ),
+            header: "",
+            className: "w-[1%] whitespace-nowrap text-right",
+            cell: (row) => {
+              const isGenerating = generatingId === row.id;
+              const canGenerate = row.status !== "generated" && !isGenerating;
+
+              return (
+                <div className="flex items-center justify-end gap-1.5">
+                  <StatusBadge
+                    status={row.status === "generated" ? "generating" : row.status}
+                  />
+                  <IconAction
+                    label={
+                      isGenerating
+                        ? "Generating blog…"
+                        : canGenerate
+                          ? "Generate blog"
+                          : "Blog already generated"
+                    }
+                    disabled={!canGenerate}
+                    onClick={() => generateArticle(row.id)}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-4" />
+                    )}
+                  </IconAction>
+                  <IconAction
+                    label="Edit topic"
+                    onClick={() => setEditTopic(row)}
+                  >
+                    <Pencil className="size-4" />
+                  </IconAction>
+                  <IconAction
+                    label="Delete topic"
+                    destructive
+                    onClick={() => setDeleteTopic(row)}
+                  >
+                    <Trash2 className="size-4" />
+                  </IconAction>
+                </div>
+              );
+            },
           },
         ]}
       />
@@ -106,6 +191,6 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
         destructive
         onConfirm={removeTopic}
       />
-    </>
+    </TooltipProvider>
   );
 }

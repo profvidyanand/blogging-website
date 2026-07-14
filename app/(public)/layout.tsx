@@ -1,37 +1,29 @@
-import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { PublicHeader } from "@/components/public/public-header";
+import { PublicFooter } from "@/components/public/public-footer";
+import type { Category } from "@/lib/types";
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("status", "active")
+    .order("name");
+
+  const cats = (categories ?? []) as Category[];
+
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            AI Blog Platform
-          </Link>
-          <nav className="flex items-center gap-4 text-sm text-zinc-600">
-            <Link href="/" className="hover:text-zinc-900">
-              Home
-            </Link>
-            <Link href="/search" className="hover:text-zinc-900">
-              Search
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-md bg-zinc-900 px-3 py-1.5 text-white hover:bg-zinc-700"
-            >
-              Admin
-            </Link>
-          </nav>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-      <footer className="border-t border-zinc-200 py-6 text-center text-sm text-zinc-500">
-        © {new Date().getFullYear()} AI Blog Platform
-      </footer>
+    <div className="flex min-h-full flex-col bg-background">
+      <PublicHeader categories={cats} />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-10">
+        {children}
+      </main>
+      <PublicFooter categories={cats} />
     </div>
   );
 }

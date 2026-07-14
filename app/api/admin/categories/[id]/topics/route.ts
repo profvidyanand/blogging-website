@@ -25,9 +25,10 @@ export async function GET(_request: Request, context: Ctx) {
   return NextResponse.json({ topics: (topics ?? []) as Topic[] });
 }
 
-const postSchema = z.object({
-  count: z.number().int().min(1).max(100),
-});
+const postSchema = z.union([
+  z.object({ count: z.number().int().min(1).max(100) }),
+  z.object({ topic: z.string().min(1).max(500) }),
+]);
 
 export async function POST(request: Request, context: Ctx) {
   const auth = await requireAdminApi();
@@ -52,7 +53,31 @@ export async function POST(request: Request, context: Ctx) {
 
   const cat = category as Category;
   if (cat.status !== "active") {
-    return jsonError("Cannot generate topics for inactive categories", 400);
+    return jsonError("Cannot add topics for inactive categories", 400);
+  }
+
+  if ("topic" in parsed.data) {
+    const { data: topic, error: insertError } = await supabase
+      .from("topics")
+      .insert({
+        category_id: id,
+        topic: parsed.data.topic,
+        status: "pending",
+        created_by: auth.admin.id,
+      })
+      .select()
+      .maybeSingle();
+
+    if (insertError) return jsonError(insertError.message, 500);
+
+    await logActivity(supabase, {
+      adminId: auth.admin.id,
+      action: "topic.create",
+      entityType: "topic",
+      entityId: topic?.id ?? null,
+    });
+
+    return NextResponse.json({ topic });
   }
 
   let topicStrings: string[];

@@ -1,12 +1,45 @@
 /* Blog article typography — reading-optimized layout with math support */
 
+/*
+ * These variables live on `.blog-article` (the shared wrapper used on both
+ * the public post page and the admin preview) so they're visible to the
+ * title/lead outside `.blog-content` too. The admin panel forces a `.dark`
+ * class on <html> — without a dark override here the hardcoded light-mode
+ * literals below would render near-black text on the dark preview background.
+ */
+.blog-article,
 .blog-content {
   --blog-text: oklch(0.28 0.01 260);
   --blog-muted: oklch(0.52 0.01 260);
   --blog-border: oklch(0.9 0.005 260);
-  --blog-accent: oklch(0.45 0.12 250);
+  --blog-accent: oklch(0.45 0.18 275);
   --blog-code-bg: oklch(0.96 0.005 260);
+  --blog-heading: oklch(0.18 0.01 260);
+  --blog-strong: oklch(0.2 0.01 260);
+  --blog-title: oklch(0.15 0.01 260);
+  --blog-pre-bg: oklch(0.17 0.01 260);
+  --blog-pre-text: oklch(0.92 0.005 260);
+  --blog-th-bg: oklch(0.97 0.005 260);
+  --blog-row-bg: oklch(0.985 0.003 260);
+}
 
+.dark .blog-article,
+.dark .blog-content {
+  --blog-text: oklch(0.85 0.008 260);
+  --blog-muted: oklch(0.66 0.012 260);
+  --blog-border: oklch(1 0 0 / 12%);
+  --blog-accent: oklch(0.75 0.16 275);
+  --blog-code-bg: oklch(0.24 0.014 260);
+  --blog-heading: oklch(0.96 0.005 260);
+  --blog-strong: oklch(0.94 0.005 260);
+  --blog-title: oklch(0.97 0.004 260);
+  --blog-pre-bg: oklch(0.1 0.01 260);
+  --blog-pre-text: oklch(0.92 0.005 260);
+  --blog-th-bg: oklch(0.22 0.014 260);
+  --blog-row-bg: oklch(0.19 0.012 260);
+}
+
+.blog-content {
   color: var(--blog-text);
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;
   font-size: 1.125rem;
@@ -30,7 +63,7 @@
 .blog-content h4,
 .blog-content h5,
 .blog-content h6 {
-  color: oklch(0.18 0.01 260);
+  color: var(--blog-heading);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 650;
   letter-spacing: -0.025em;
@@ -67,7 +100,7 @@
 
 .blog-content strong {
   font-weight: 650;
-  color: oklch(0.2 0.01 260);
+  color: var(--blog-strong);
 }
 
 .blog-content em {
@@ -78,7 +111,7 @@
   color: var(--blog-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: oklch(0.45 0.12 250 / 0.35);
+  text-decoration-color: oklch(0.45 0.18 275 / 0.35);
   transition: text-decoration-color 0.15s;
 }
 
@@ -136,8 +169,8 @@
   margin: 1.75em 0;
   padding: 1.1em 1.25em;
   overflow-x: auto;
-  background: oklch(0.17 0.01 260);
-  color: oklch(0.92 0.005 260);
+  background: var(--blog-pre-bg);
+  color: var(--blog-pre-text);
   border-radius: 0.625rem;
   font-size: 0.875rem;
   line-height: 1.65;
@@ -169,11 +202,11 @@
 .blog-content th {
   font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 600;
-  background: oklch(0.97 0.005 260);
+  background: var(--blog-th-bg);
 }
 
 .blog-content tr:nth-child(even) td {
-  background: oklch(0.985 0.003 260);
+  background: var(--blog-row-bg);
 }
 
 /* Images & figures */
@@ -262,7 +295,7 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
-  color: oklch(0.15 0.01 260);
+  color: var(--blog-title, oklch(0.15 0.01 260));
 }
 
 .blog-article-lead {

@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/admin/status-badge";
 import { TopicTable } from "@/components/admin/topic-table";
 import { GetTopicsForm } from "@/components/admin/get-topics-form";
+import { AddTopicForm } from "@/components/admin/add-topic-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Category, Topic } from "@/lib/types";
 
 type Props = { params: Promise<{ categoryId: string }> };
@@ -32,37 +34,43 @@ export default async function CategoryDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/admin/categories"
-          className="text-sm text-zinc-500 hover:text-zinc-800"
-        >
-          ← Categories
-        </Link>
-        <PageHeader
-          title={cat.name}
-          description={cat.description ?? undefined}
-          actions={<Badge variant={cat.status === "active" ? "default" : "secondary"}>{cat.status}</Badge>}
-        />
-      </div>
+      <Link
+        href="/admin/categories"
+        className="inline-flex text-body-sm text-muted-foreground hover:text-foreground"
+      >
+        ← Categories
+      </Link>
+      <PageHeader
+        title={cat.name}
+        description={cat.description ?? undefined}
+        actions={<StatusBadge status={cat.status} />}
+      />
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-          Generate topics
-        </h2>
-        <GetTopicsForm
-          categoryId={cat.id}
-          disabled={cat.status !== "active"}
-        />
-        {cat.status !== "active" ? (
-          <p className="mt-2 text-sm text-amber-700">
-            Inactive categories cannot generate new topics.
-          </p>
-        ) : null}
-      </section>
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="text-body-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Generate topics
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <GetTopicsForm
+            categoryId={cat.id}
+            disabled={cat.status !== "active"}
+          />
+          <AddTopicForm
+            categoryId={cat.id}
+            disabled={cat.status !== "active"}
+          />
+          {cat.status !== "active" ? (
+            <p className="mt-3 rounded-md bg-warning/15 px-3 py-2 text-body-sm text-warning-foreground">
+              Inactive categories cannot generate new topics.
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Topics</h2>
+      <section className="space-y-3">
+        <h2 className="text-h2">Topics</h2>
         <TopicTable topics={(topics ?? []) as Topic[]} />
       </section>
     </div>

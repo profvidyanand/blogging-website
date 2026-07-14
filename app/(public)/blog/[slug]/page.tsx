@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
 import { BlogArticleContent } from "@/components/public/blog-article-content";
 import { BlogArticleFaq } from "@/components/public/blog-article-faq";
+import { buttonVariants } from "@/components/ui/button";
+import { Mail, Share2 } from "lucide-react";
+import { getCategoryAccent } from "@/lib/category-colors";
+import { cn } from "@/lib/utils";
 import type { Article, Category, FaqItem } from "@/lib/types";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -72,7 +76,7 @@ export default async function BlogDetailPage({ params }: Props) {
         <img
           src={post.featured_image}
           alt=""
-          className="aspect-[2/1] w-full rounded-2xl object-cover shadow-sm"
+          className="aspect-[2/1] w-full rounded-2xl object-cover shadow-card"
         />
       ) : null}
 
@@ -80,7 +84,11 @@ export default async function BlogDetailPage({ params }: Props) {
         {cat ? (
           <Link
             href={`/category/${cat.slug}`}
-            className="inline-block text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+            className={cn(
+              "inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80",
+              getCategoryAccent(cat.name).bg,
+              getCategoryAccent(cat.name).text
+            )}
           >
             {cat.name}
           </Link>
@@ -89,8 +97,7 @@ export default async function BlogDetailPage({ params }: Props) {
         {post.summary ? (
           <p className="blog-article-lead">{post.summary}</p>
         ) : null}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
-          {post.author_name ? <span>By {post.author_name}</span> : null}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-body-sm text-muted-foreground">
           {post.published_at ? (
             <time dateTime={post.published_at}>
               {new Date(post.published_at).toLocaleDateString(undefined, {
@@ -102,7 +109,7 @@ export default async function BlogDetailPage({ params }: Props) {
           ) : null}
         </div>
         {post.featured_image_credit ? (
-          <p className="text-xs text-zinc-400">{post.featured_image_credit}</p>
+          <p className="text-caption">{post.featured_image_credit}</p>
         ) : null}
       </header>
 
@@ -110,19 +117,23 @@ export default async function BlogDetailPage({ params }: Props) {
 
       <BlogArticleFaq items={faq} />
 
-      <section className="flex flex-wrap gap-3 border-t pt-6 text-sm">
-        <span className="font-medium">Share:</span>
+      <section className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
+        <span className="flex items-center gap-1.5 text-body-sm font-medium">
+          <Share2 className="size-4" />
+          Share
+        </span>
         <a
           href={`mailto:?subject=${shareText}&body=${encodeURIComponent(shareUrl)}`}
-          className="underline"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
         >
+          <Mail className="size-4" />
           Email
         </a>
         <a
           href={`https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(shareUrl)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           X / Twitter
         </a>
@@ -130,15 +141,15 @@ export default async function BlogDetailPage({ params }: Props) {
           href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           LinkedIn
         </a>
       </section>
 
       {(related ?? []).length > 0 ? (
-        <section className="space-y-4 border-t pt-6">
-          <h2 className="text-2xl font-semibold">Related articles</h2>
+        <section className="space-y-4 border-t border-border pt-8">
+          <h2 className="text-h2">Related articles</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {(related as Article[]).map((r) => (
               <BlogCard

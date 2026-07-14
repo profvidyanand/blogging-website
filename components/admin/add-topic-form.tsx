@@ -5,8 +5,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/lib/toast";
 
-export function GetTopicsForm({
+export function AddTopicForm({
   categoryId,
   disabled,
 }: {
@@ -14,25 +15,28 @@ export function GetTopicsForm({
   disabled?: boolean;
 }) {
   const router = useRouter();
-  const [count, setCount] = useState(2);
+  const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const trimmed = topic.trim();
+    if (!trimmed) return;
+
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/admin/categories/${categoryId}/topics`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ topic: trimmed }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate topics");
+      if (!res.ok) throw new Error(data.error || "Failed to add topic");
+      setTopic("");
+      toast.success("Topic added");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? err.message : "Failed");
     } finally {
       setLoading(false);
     }
@@ -40,23 +44,20 @@ export function GetTopicsForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1">
-        <Label htmlFor="topic-count">Number of Topics</Label>
+      <div className="min-w-0 flex-1 space-y-1">
+        <Label htmlFor="manual-topic">Add topic manually</Label>
         <Input
-          id="topic-count"
-          type="number"
-          min={1}
-          max={100}
-          value={count}
-          onChange={(e) => setCount(Number(e.target.value))}
-          className="w-28"
+          id="manual-topic"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Enter a topic title…"
           disabled={disabled || loading}
+          required
         />
       </div>
-      <Button type="submit" disabled={disabled || loading}>
-        {loading ? "Getting topics…" : "Get Topics"}
+      <Button type="submit" variant="outline" disabled={disabled || loading || !topic.trim()}>
+        {loading ? "Adding…" : "Add topic"}
       </Button>
-      {error ? <p className="w-full text-sm text-destructive">{error}</p> : null}
     </form>
   );
 }

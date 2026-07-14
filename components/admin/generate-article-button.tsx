@@ -40,7 +40,7 @@ export function GenerateArticleButton({
       <Button size="sm" onClick={onClick} disabled={disabled || loading}>
         {loading ? "Generating…" : "Generate Blog"}
       </Button>
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </div>
   );
 }
