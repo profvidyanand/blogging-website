@@ -308,3 +308,16 @@
 .blog-faq summary {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* Text-to-speech reader */
+.blog-content .tts-active {
+  background-color: color-mix(in oklch, var(--blog-accent, oklch(0.55 0.15 250)) 18%, transparent);
+  border-radius: 0.2em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.2s ease;
+}
+
+.audio-player {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}

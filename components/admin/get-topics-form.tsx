@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -54,7 +55,11 @@ export function GetTopicsForm({
         />
       </div>
       <Button type="submit" disabled={disabled || loading}>
-        {loading ? "Getting topics…" : "Get Topics"}
+        <LoadingLabel
+          loading={loading}
+          label="Get Topics"
+          loadingLabel="Getting topics…"
+        />
       </Button>
       {error ? <p className="w-full text-sm text-destructive">{error}</p> : null}
     </form>

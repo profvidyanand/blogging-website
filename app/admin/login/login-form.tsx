@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -83,7 +84,11 @@ export default function AdminLoginForm() {
               </p>
             ) : null}
             <Button type="submit" disabled={loading} className="w-full min-h-10">
-              {loading ? "Signing in…" : "Sign in"}
+              <LoadingLabel
+                loading={loading}
+                label="Sign in"
+                loadingLabel="Signing in…"
+              />
             </Button>
           </form>
         </CardContent>

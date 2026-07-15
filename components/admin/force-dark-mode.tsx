@@ -1,6 +1,13 @@
 "use client";
 
+import { useServerInsertedHTML } from "next/navigation";
 import { useEffect } from "react";
+
+// Runs before hydration so the admin panel never flashes the light theme on
+// a hard navigation/refresh. Injected via useServerInsertedHTML so React 19
+// does not warn about inline <script> tags inside the component tree.
+const NO_FLASH_DARK_SCRIPT =
+  "document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';";
 
 /**
  * The admin panel is always dark, regardless of the visitor's system/site
@@ -11,6 +18,10 @@ import { useEffect } from "react";
  * so navigating back to the public site restores the light theme.
  */
 export function ForceDarkMode() {
+  useServerInsertedHTML(() => (
+    <script dangerouslySetInnerHTML={{ __html: NO_FLASH_DARK_SCRIPT }} />
+  ));
+
   useEffect(() => {
     const root = document.documentElement;
     const hadDark = root.classList.contains("dark");

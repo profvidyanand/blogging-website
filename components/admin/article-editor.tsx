@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
 import type { Article, FaqItem } from "@/lib/types";
 
@@ -181,7 +182,11 @@ export function ArticleEditor({ article }: { article: Article }) {
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md lg:left-56">
         <div className="mx-auto flex max-w-3xl gap-2">
           <Button type="submit" disabled={loading} className="min-h-10">
-            {loading ? "Saving…" : "Save"}
+            <LoadingLabel
+              loading={loading}
+              label="Save"
+              loadingLabel="Saving…"
+            />
           </Button>
           <Button
             type="button"

@@ -12,6 +12,7 @@ export function BlogArticleContent({
 
   return (
     <div
+      data-tts-root
       className={cn("blog-content", className)}
       dangerouslySetInnerHTML={{ __html: processed }}
     />

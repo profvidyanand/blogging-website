@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -67,7 +68,11 @@ export function EditTopicDialog({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={loading || !topic.trim()}>
-              {loading ? "Saving…" : "Save"}
+              <LoadingLabel
+                loading={loading}
+                label="Save"
+                loadingLabel="Saving…"
+              />
             </Button>
           </div>
         </div>

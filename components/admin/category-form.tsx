@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,7 +86,11 @@ export function CategoryForm({
           </Button>
         ) : null}
         <Button type="submit" disabled={loading}>
-          {loading ? "Saving…" : submitLabel}
+          <LoadingLabel
+            loading={loading}
+            label={submitLabel}
+            loadingLabel="Saving…"
+          />
         </Button>
       </div>
     </form>

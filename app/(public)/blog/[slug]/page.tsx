@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
+import { AudioPlayer } from "@/components/public/audio-player";
 import { BlogArticleContent } from "@/components/public/blog-article-content";
 import { BlogArticleFaq } from "@/components/public/blog-article-faq";
 import { buttonVariants } from "@/components/ui/button";
@@ -111,6 +112,7 @@ export default async function BlogDetailPage({ params }: Props) {
         {post.featured_image_credit ? (
           <p className="text-caption">{post.featured_image_credit}</p>
         ) : null}
+        <AudioPlayer title={post.title} />
       </header>
 
       <BlogArticleContent html={post.content} />

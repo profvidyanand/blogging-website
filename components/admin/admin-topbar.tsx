@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { ChevronRight, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { createClient } from "@/lib/supabase/client";
 
 const routeLabels: Record<string, string> = {
@@ -72,13 +74,19 @@ function AdminBreadcrumbs() {
 
 function UserAvatar({ email }: { email: string }) {
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const initials = email.slice(0, 2).toUpperCase();
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/admin/login");
-    router.refresh();
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/admin/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -101,9 +109,17 @@ function UserAvatar({ email }: { email: string }) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={handleLogout}
+          disabled={loggingOut}
+        >
           <LogOut />
-          Log out
+          <LoadingLabel
+            loading={loggingOut}
+            label="Log out"
+            loadingLabel="Logging out…"
+          />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

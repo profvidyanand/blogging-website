@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 
 export function ConfirmDialog({
   open,
@@ -60,7 +61,11 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={loading}
           >
-            {loading ? "Working…" : confirmLabel}
+            <LoadingLabel
+              loading={loading}
+              label={confirmLabel}
+              loadingLabel="Working…"
+            />
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -51,11 +51,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <header className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-background px-6 py-8 sm:px-8">
         <Badge className={`${accent.bg} ${accent.text}`}>Category</Badge>
         <h1 className="mt-3 text-h1">{cat.name}</h1>
-        {cat.description ? (
-          <p className="mt-3 max-w-2xl text-body text-muted-foreground">
-            {cat.description}
-          </p>
-        ) : null}
         <p className="mt-2 text-caption">
           {count ?? 0} article{(count ?? 0) === 1 ? "" : "s"}
         </p>

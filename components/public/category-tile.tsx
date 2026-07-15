@@ -22,14 +22,9 @@ export function CategoryTile({ category }: { category: Category }) {
       >
         {category.name.charAt(0).toUpperCase()}
       </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-center gap-1 font-semibold text-foreground">
-          {category.name}
-          <ArrowRight className="size-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-        </span>
-        <span className="mt-0.5 line-clamp-2 text-caption">
-          {category.description || `Latest ${category.name.toLowerCase()} stories`}
-        </span>
+      <span className="flex min-w-0 flex-1 items-center font-semibold text-foreground">
+        {category.name}
+        <ArrowRight className="ml-1 size-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
       </span>
     </Link>
   );

@@ -1,15 +1,10 @@
 import { Suspense } from "react";
+import { LoginFallback } from "@/components/loading/login-fallback";
 import AdminLoginForm from "./login-form";
 
 export default function AdminLoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-muted/40">
-          Loading…
-        </div>
-      }
-    >
+    <Suspense fallback={<LoginFallback />}>
       <AdminLoginForm />
     </Suspense>
   );

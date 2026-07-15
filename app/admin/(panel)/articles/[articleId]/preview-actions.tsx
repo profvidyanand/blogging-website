@@ -9,6 +9,7 @@ import { ScheduleDialog } from "@/components/admin/schedule-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { BlogArticleContent } from "@/components/public/blog-article-content";
 import { BlogArticleFaq } from "@/components/public/blog-article-faq";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { toast } from "@/lib/toast";
 import type { Article, Category, FaqItem } from "@/lib/types";
 
@@ -98,7 +99,11 @@ export function ArticlePreviewActions({
           <Separator orientation="vertical" className="mx-1 hidden h-6 sm:block" />
           {article.status === "published" ? (
             <Button onClick={unpublish} disabled={loading} size="sm">
-              Unpublish
+              <LoadingLabel
+                loading={loading}
+                label="Unpublish"
+                loadingLabel="Unpublishing…"
+              />
             </Button>
           ) : article.status === "scheduled" ? (
             <span className="text-body-sm text-muted-foreground">
@@ -109,13 +114,18 @@ export function ArticlePreviewActions({
             </span>
           ) : (
             <Button onClick={publish} disabled={loading} size="sm">
-              Publish
+              <LoadingLabel
+                loading={loading}
+                label="Publish"
+                loadingLabel="Publishing…"
+              />
             </Button>
           )}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setScheduleOpen(true)}
+            disabled={loading}
           >
             Schedule
           </Button>

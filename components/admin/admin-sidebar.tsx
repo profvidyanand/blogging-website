@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { createClient } from "@/lib/supabase/client";
 
 const contentNav = [
@@ -30,6 +32,7 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
@@ -37,11 +40,16 @@ export function AdminSidebar({
   }
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    onNavigate?.();
-    router.push("/admin/login");
-    router.refresh();
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      onNavigate?.();
+      router.push("/admin/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -104,10 +112,15 @@ export function AdminSidebar({
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          disabled={loggingOut}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
         >
           <LogOut className="size-4" />
-          Log out
+          <LoadingLabel
+            loading={loggingOut}
+            label="Log out"
+            loadingLabel="Logging out…"
+          />
         </button>
       </div>
     </aside>

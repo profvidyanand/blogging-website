@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
@@ -56,7 +57,11 @@ export function AddTopicForm({
         />
       </div>
       <Button type="submit" variant="outline" disabled={disabled || loading || !topic.trim()}>
-        {loading ? "Adding…" : "Add topic"}
+        <LoadingLabel
+          loading={loading}
+          label="Add topic"
+          loadingLabel="Adding…"
+        />
       </Button>
     </form>
   );

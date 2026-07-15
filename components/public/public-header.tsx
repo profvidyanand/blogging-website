@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Menu, Search, Sparkles } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Loader2, Menu, Search, Sparkles } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,7 @@ import type { Category } from "@/lib/types";
 export function PublicHeader({ categories }: { categories: Category[] }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [isSearching, startSearchTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -30,7 +31,10 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
-    router.push(`/search?${params.toString()}`);
+    startSearchTransition(() => {
+      router.push(`/search?${params.toString()}`);
+      setOpen(false);
+    });
   }
 
   return (
@@ -58,7 +62,11 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
                 placeholder="Search articles..."
                 aria-label="Search"
                 className="h-9 rounded-full pl-8"
+                disabled={isSearching}
               />
+              {isSearching ? (
+                <Loader2 className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+              ) : null}
             </div>
           </form>
           <Link
@@ -128,7 +136,11 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
                 placeholder="Search articles..."
                 aria-label="Search"
                 className="h-9 rounded-full pl-8"
+                disabled={isSearching}
               />
+              {isSearching ? (
+                <Loader2 className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+              ) : null}
             </form>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
               <Link

@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -63,7 +64,11 @@ export function ScheduleDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Scheduling…" : "Schedule"}
+              <LoadingLabel
+                loading={loading}
+                label="Schedule"
+                loadingLabel="Scheduling…"
+              />
             </Button>
           </div>
         </form>
