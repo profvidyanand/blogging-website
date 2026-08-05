@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateTopics } from "@/lib/ai";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
-import type { Category, Topic } from "@/lib/types";
+import { normalizeLanguage, type Category, type Topic } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -85,6 +85,7 @@ export async function POST(request: Request, context: Ctx) {
     topicStrings = await generateTopics({
       categoryName: cat.name,
       categoryDescription: cat.description ?? undefined,
+      language: normalizeLanguage(cat.language),
       count: parsed.data.count,
     });
   } catch (err) {

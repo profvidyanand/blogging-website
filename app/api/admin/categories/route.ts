@@ -3,12 +3,22 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
-import { ensureUniqueSlug, slugify } from "@/lib/slug";
+import { ensureUniqueSlug } from "@/lib/slug";
 import { jsonError, requireAdminApi } from "@/lib/api";
+import { DEFAULT_LANGUAGE } from "@/lib/types";
+
+const languageSchema = z.enum([
+  "english",
+  "hindi",
+  "sanskrit",
+  "marathi",
+  "gujarati",
+]);
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
   description: z.string().max(2000).optional(),
+  language: languageSchema.optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -22,7 +32,8 @@ export async function POST(request: Request) {
     return jsonError(parsed.error.issues[0]?.message ?? "Invalid body");
   }
 
-  const { name, description, status = "active" } = parsed.data;
+  const { name, description, language = DEFAULT_LANGUAGE, status = "active" } =
+    parsed.data;
   const admin = createAdminClient();
 
   const slug = await ensureUniqueSlug(name, async (candidate) => {
@@ -40,6 +51,7 @@ export async function POST(request: Request) {
       name,
       slug,
       description: description ?? null,
+      language,
       status,
       created_by: auth.admin.id,
     })
@@ -66,7 +78,7 @@ export async function POST(request: Request) {
     action: "category.create",
     entityType: "category",
     entityId: category.id,
-    metadata: { name, slug },
+    metadata: { name, slug, language },
   });
 
   return NextResponse.json({ category });

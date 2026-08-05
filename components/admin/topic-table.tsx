@@ -117,8 +117,9 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
           {
             key: "topic",
             header: "Topic",
+            mobileTitle: true,
             cell: (row) => (
-              <span className="block max-w-xl whitespace-normal py-1 leading-snug">
+              <span className="block whitespace-normal text-sm font-medium leading-snug">
                 {row.topic}
               </span>
             ),
@@ -127,12 +128,13 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
             key: "actions",
             header: "",
             className: "w-[1%] whitespace-nowrap text-right",
+            mobileActions: true,
             cell: (row) => {
               const isGenerating = generatingId === row.id;
               const canGenerate = row.status !== "generated" && !isGenerating;
 
               return (
-                <div className="flex items-center justify-end gap-1.5">
+                <div className="flex w-full flex-wrap items-center justify-end gap-1.5">
                   <StatusBadge
                     status={row.status === "generated" ? "generating" : row.status}
                   />

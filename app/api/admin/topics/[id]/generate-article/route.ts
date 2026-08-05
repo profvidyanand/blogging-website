@@ -5,7 +5,7 @@ import { searchImage, trackDownload } from "@/lib/unsplash";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
-import type { Category, FaqItem, Topic } from "@/lib/types";
+import { normalizeLanguage, type Category, type FaqItem, type Topic } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -45,8 +45,10 @@ export async function POST(_request: Request, context: Ctx) {
     generated = await generateArticle({
       topic: topic.topic,
       categoryName: category.name,
+      language: normalizeLanguage(category.language),
     });
   } catch (err) {
+    console.error("Article generation failed:", err);
     return jsonError(
       err instanceof Error ? err.message : "Article generation failed",
       502,

@@ -8,6 +8,20 @@ const BLOCK_SELECTOR =
 const HEADING_TAGS = new Set(["H1", "H2", "H3", "H4"]);
 const MATH_BLOCK_CLASS = "math-display";
 
+function getMathRoot(el: Element): Element | null {
+  if (
+    el.hasAttribute("data-latex") ||
+    el.classList.contains("math-inline") ||
+    el.classList.contains("math-display")
+  ) {
+    return el;
+  }
+
+  return el.closest(
+    "[data-latex], .math-inline, .math-display, .katex-display, .katex, math",
+  );
+}
+
 function isSkippedElement(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
   return (
@@ -28,14 +42,12 @@ function isInsideSkippedSubtree(el: Element, root: Element): boolean {
 }
 
 function isMathElement(el: Element): boolean {
-  const tag = el.tagName.toLowerCase();
-  return (
-    tag === "math" ||
-    el.classList.contains("math-inline") ||
-    el.classList.contains("math-display") ||
-    el.classList.contains("katex") ||
-    el.classList.contains("katex-display")
-  );
+  return getMathRoot(el) === el;
+}
+
+function isInsideMath(el: Element): boolean {
+  const root = getMathRoot(el);
+  return root !== null && root !== el;
 }
 
 function isMathBlock(el: HTMLElement): boolean {
@@ -60,6 +72,7 @@ function extractTextFromNode(node: Node): string {
 
   const el = node as Element;
   if (isSkippedElement(el)) return "";
+  if (isInsideMath(el)) return "";
   if (isMathElement(el)) return mathNodeToSpeech(el);
 
   const tag = el.tagName.toLowerCase();
@@ -108,6 +121,7 @@ function collectTextNodes(block: HTMLElement): TextNodeRef[] {
 
     const el = node as Element;
     if (isSkippedElement(el)) return;
+    if (isInsideMath(el)) return;
     if (isMathElement(el)) {
       const speech = mathNodeToSpeech(el);
       offset += speech.length;

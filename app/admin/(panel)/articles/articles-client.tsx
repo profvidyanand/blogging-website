@@ -106,7 +106,7 @@ export function ArticlesClient({
         <CardContent className="pt-6">
           <form
             onSubmit={applyFilters}
-            className="flex flex-wrap items-end gap-4"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end"
           >
             <div className="space-y-1.5">
               <Label htmlFor="filter-status" className="text-caption">
@@ -117,7 +117,7 @@ export function ArticlesClient({
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 disabled={isFiltering}
-                className="flex h-10 min-w-[140px] rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               >
                 <option value="">All</option>
                 <option value="draft">Draft</option>
@@ -135,7 +135,7 @@ export function ArticlesClient({
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 disabled={isFiltering}
-                className="flex h-10 min-w-[160px] rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               >
                 <option value="">All</option>
                 {categories.map((c) => (
@@ -154,11 +154,15 @@ export function ArticlesClient({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Title…"
-                className="w-48"
+                className="w-full"
                 disabled={isFiltering}
               />
             </div>
-            <Button type="submit" className="min-h-10" disabled={isFiltering}>
+            <Button
+              type="submit"
+              className="min-h-10 w-full sm:w-auto lg:shrink-0"
+              disabled={isFiltering}
+            >
               <LoadingLabel
                 loading={isFiltering}
                 label="Filter"
@@ -177,6 +181,7 @@ export function ArticlesClient({
           {
             key: "title",
             header: "Title",
+            mobileTitle: true,
             cell: (row) => (
               <Link
                 href={`/admin/articles/${row.id}`}
@@ -200,6 +205,7 @@ export function ArticlesClient({
             key: "actions",
             header: "",
             className: "w-12",
+            mobileActions: true,
             cell: (row) => {
               const isRowBusy = actionId === row.id;
               return (

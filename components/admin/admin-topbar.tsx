@@ -50,7 +50,10 @@ function AdminBreadcrumbs() {
   }
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-body-sm">
+    <nav
+      aria-label="Breadcrumb"
+      className="flex min-w-0 items-center gap-1 overflow-x-auto text-body-sm"
+    >
       {crumbs.map((crumb, i) => (
         <span key={crumb.href} className="flex items-center gap-1">
           {i > 0 ? (
@@ -127,10 +130,12 @@ function UserAvatar({ email }: { email: string }) {
 }
 
 export function AdminTopbar({ email }: { email: string }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-      <div className="flex items-center gap-3">
-        <Sheet>
+      <div className="flex min-w-0 items-center gap-3">
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetTrigger
             render={
               <Button variant="ghost" size="icon-sm" className="lg:hidden" />
@@ -141,7 +146,11 @@ export function AdminTopbar({ email }: { email: string }) {
           </SheetTrigger>
           <SheetContent side="left" className="w-56 p-0" showCloseButton>
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <AdminSidebar email={email} className="w-full border-0" />
+            <AdminSidebar
+              email={email}
+              className="w-full border-0"
+              onNavigate={() => setMobileNavOpen(false)}
+            />
           </SheetContent>
         </Sheet>
         <AdminBreadcrumbs />

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
-import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { CategoriesClient } from "./categories-client";
 import type { Category } from "@/lib/types";
@@ -39,10 +38,6 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Categories"
-        description="Manage categories assigned to you. Creating a category auto-assigns it to you."
-      />
       <CategoriesClient initial={withCounts} />
       {withCounts.length > 0 ? (
         <ul className="sr-only">

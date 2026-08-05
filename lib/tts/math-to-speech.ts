@@ -97,41 +97,10 @@ const OPERATORS: Record<string, string> = {
   "\\sim": " distributed as ",
 };
 
-const NUMBER_WORDS: Record<string, string> = {
-  "0": "zero",
-  "1": "one",
-  "2": "two",
-  "3": "three",
-  "4": "four",
-  "5": "five",
-  "6": "six",
-  "7": "seven",
-  "8": "eight",
-  "9": "nine",
-  "10": "ten",
-  "11": "eleven",
-  "12": "twelve",
-};
-
-function numberToWord(n: string): string {
-  return NUMBER_WORDS[n] ?? n;
-}
-
 function powerToSpeech(base: string, exp: string): string {
-  const trimmedExp = exp.trim();
-  if (trimmedExp === "2") {
-    const baseWord = /^\d+$/.test(base.trim())
-      ? numberToWord(base.trim())
-      : base.trim();
-    return `${baseWord} squared`;
-  }
-  if (trimmedExp === "3") {
-    const baseWord = /^\d+$/.test(base.trim())
-      ? numberToWord(base.trim())
-      : base.trim();
-    return `${baseWord} cubed`;
-  }
-  return `${base.trim()} to the power of ${trimmedExp}`;
+  const baseWord = base.trim();
+  const expWord = exp.trim();
+  return `${baseWord} to the power of ${expWord}`;
 }
 
 function replaceGreek(tex: string): string {
@@ -162,17 +131,50 @@ function replaceBinom(tex: string): string {
       /\\binom\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,
       (_, n, k) => `${n.trim()} choose ${k.trim()}`,
     )
-    .replace(
-      /\\choose/g,
-      " choose ",
-    );
+    .replace(/\\choose/g, " choose ");
+}
+
+function extractBalancedBraces(text: string, startIdx: number): string | null {
+  if (text[startIdx] !== "{") return null;
+  let depth = 0;
+  let i = startIdx;
+  while (i < text.length) {
+    if (text[i] === "{") depth++;
+    if (text[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        return text.slice(startIdx + 1, i);
+      }
+    }
+    i++;
+  }
+  return null;
 }
 
 function replaceFractions(tex: string): string {
-  return tex.replace(
-    /\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,
-    (_, num, den) => `${num.trim()} over ${den.trim()}`,
-  );
+  let result = tex;
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    const fracMatch = /\\frac\s*/.exec(result);
+    if (!fracMatch) break;
+
+    const fracEnd = fracMatch.index + fracMatch[0].length;
+    const numerator = extractBalancedBraces(result, fracEnd);
+    if (!numerator) break;
+
+    const denStart = fracEnd + numerator.length + 2;
+    const denominator = extractBalancedBraces(result, denStart);
+    if (!denominator) break;
+
+    const denEnd = denStart + denominator.length + 2;
+    const replacement = ` ${numerator.trim()} over ${denominator.trim()} `;
+    result = result.slice(0, fracMatch.index) + replacement + result.slice(denEnd);
+    changed = true;
+  }
+
+  return result;
 }
 
 function replaceSqrt(tex: string): string {
@@ -183,7 +185,10 @@ function replaceSqrt(tex: string): string {
 }
 
 function replaceFactorials(tex: string): string {
-  return tex.replace(/([a-zA-Z0-9\)]+)!/g, (_, base) => `${base.trim()} factorial`);
+  return tex.replace(
+    /([a-zA-Z0-9\)]+)!/g,
+    (_, base) => `${base.trim()} factorial`,
+  );
 }
 
 function replaceSubscripts(tex: string): string {
@@ -194,6 +199,27 @@ function replaceSubscripts(tex: string): string {
     .replace(/([a-zA-Z0-9]+)_([a-zA-Z0-9])/g, (_, base, sub) => {
       return `${base} sub ${sub}`;
     });
+}
+
+function replaceGroupedSuperscripts(tex: string): string {
+  let result = tex;
+  let prev = "";
+
+  while (prev !== result) {
+    prev = result;
+    result = result.replace(
+      /\(([^()]+)\)\^\{([^{}]+)\}/g,
+      (_, inner, exp) =>
+        ` bracket open ${inner.trim()} bracket close to the power of ${exp.trim()}`,
+    );
+    result = result.replace(
+      /\(([^()]+)\)\^([a-zA-Z0-9-]+)/g,
+      (_, inner, exp) =>
+        ` bracket open ${inner.trim()} bracket close to the power of ${exp.trim()}`,
+    );
+  }
+
+  return result;
 }
 
 function replaceSuperscripts(tex: string): string {
@@ -208,12 +234,45 @@ function replaceSuperscripts(tex: string): string {
 
 function replaceParentheses(tex: string): string {
   return tex
-    .replace(/\\left\s*\(/g, " open parenthesis ")
-    .replace(/\\right\s*\)/g, " close parenthesis ")
-    .replace(/\\left\s*\[/g, " open bracket ")
-    .replace(/\\right\s*\]/g, " close bracket ")
-    .replace(/\\left\s*\{/g, " open brace ")
-    .replace(/\\right\s*\}/g, " close brace ");
+    .replace(/\\left\s*\(/g, " bracket open ")
+    .replace(/\\right\s*\)/g, " bracket close ")
+    .replace(/\\left\s*\[/g, " bracket open ")
+    .replace(/\\right\s*\]/g, " bracket close ")
+    .replace(/\\left\s*\{/g, " bracket open ")
+    .replace(/\\right\s*\}/g, " bracket close ");
+}
+
+function replacePlainBrackets(tex: string): string {
+  let result = tex;
+  let prev = "";
+
+  while (prev !== result) {
+    prev = result;
+    result = result.replace(
+      /\(([^()]+)\)/g,
+      " bracket open $1 bracket close ",
+    );
+  }
+
+  return result;
+}
+
+function replaceImplicitMultiplicationEarly(tex: string): string {
+  let result = tex;
+
+  result = result.replace(/(\d)([a-zA-Z])/g, "$1 times $2");
+  result = result.replace(
+    /(?<![a-zA-Z\\])([a-z])([a-z])(?![a-zA-Z])/g,
+    "$1 times $2",
+  );
+  result = result.replace(/(\))([a-zA-Z(])/g, "$1 times $2");
+  result = result.replace(/([a-z])(\()/g, "$1 times $2");
+
+  return result;
+}
+
+function normalizeCarets(tex: string): string {
+  return tex.replace(/\s*\^\s*/g, "^");
 }
 
 function stripLatexCommands(tex: string): string {
@@ -229,23 +288,31 @@ function stripLatexCommands(tex: string): string {
     .trim();
 }
 
+function normalizeSpeech(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
 export function latexToSpeech(tex: string): string {
   if (!tex.trim()) return "";
 
   let result = tex.trim();
   result = replaceTextCommands(result);
   result = replaceBinom(result);
+  result = replaceImplicitMultiplicationEarly(result);
+  result = replaceGroupedSuperscripts(result);
+  result = replaceGreek(result);
+  result = normalizeCarets(result);
   result = replaceFractions(result);
   result = replaceSqrt(result);
   result = replaceSuperscripts(result);
   result = replaceSubscripts(result);
   result = replaceFactorials(result);
   result = replaceParentheses(result);
-  result = replaceGreek(result);
   result = replaceOperators(result);
+  result = replacePlainBrackets(result);
   result = stripLatexCommands(result);
 
-  return result.replace(/\s+/g, " ").trim();
+  return normalizeSpeech(result);
 }
 
 function mathmlNodeToSpeech(node: Element): string {
@@ -280,26 +347,45 @@ function mathmlNodeToSpeech(node: Element): string {
   }
 
   walk(node);
-  return parts.join(" ").replace(/\s+/g, " ").trim();
+  return normalizeSpeech(parts.join(" "));
+}
+
+function getMathHost(el: Element): Element {
+  return (
+    el.closest("[data-latex], .math-inline, .math-display, .katex, math") ?? el
+  );
+}
+
+function readLatexFromElement(el: Element): string | null {
+  const host = getMathHost(el);
+  const dataLatex = host.getAttribute("data-latex");
+  if (dataLatex?.trim()) return dataLatex.trim();
+
+  const katexAnnotation = host.querySelector(
+    'annotation[encoding="application/x-tex"]',
+  );
+  if (katexAnnotation?.textContent?.trim()) {
+    return katexAnnotation.textContent.trim();
+  }
+
+  return null;
 }
 
 export function mathNodeToSpeech(el: Element): string {
-  const katexAnnotation = el.querySelector(
-    'annotation[encoding="application/x-tex"]',
-  );
-  if (katexAnnotation?.textContent) {
-    return latexToSpeech(katexAnnotation.textContent);
+  const latex = readLatexFromElement(el);
+  if (latex) return latexToSpeech(latex);
+
+  const host = getMathHost(el);
+
+  if (host.tagName.toLowerCase() === "math") {
+    return mathmlNodeToSpeech(host);
   }
 
-  if (el.tagName.toLowerCase() === "math") {
-    return mathmlNodeToSpeech(el);
-  }
-
-  const mathChild = el.querySelector("math");
+  const mathChild = host.querySelector("math");
   if (mathChild) {
     return mathmlNodeToSpeech(mathChild);
   }
 
-  const tex = el.textContent?.trim() ?? "";
+  const tex = host.textContent?.trim() ?? "";
   return latexToSpeech(tex);
 }

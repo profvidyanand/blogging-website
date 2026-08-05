@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { LanguageBadge } from "@/components/admin/language-badge";
 import { TopicTable } from "@/components/admin/topic-table";
 import { GetTopicsForm } from "@/components/admin/get-topics-form";
 import { AddTopicForm } from "@/components/admin/add-topic-form";
@@ -43,7 +44,12 @@ export default async function CategoryDetailPage({ params }: Props) {
       <PageHeader
         title={cat.name}
         description={cat.description ?? undefined}
-        actions={<StatusBadge status={cat.status} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <LanguageBadge language={cat.language} />
+            <StatusBadge status={cat.status} />
+          </div>
+        }
       />
 
       <Card className="shadow-card">

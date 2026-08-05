@@ -6,6 +6,35 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export type Language = "english" | "hindi" | "sanskrit" | "marathi" | "gujarati";
+
+export const SUPPORTED_LANGUAGES: { value: Language; label: string }[] = [
+  { value: "english", label: "English" },
+  { value: "hindi", label: "Hindi" },
+  { value: "sanskrit", label: "Sanskrit" },
+  { value: "marathi", label: "Marathi" },
+  { value: "gujarati", label: "Gujarati" },
+];
+
+export const DEFAULT_LANGUAGE: Language = "english";
+
+export function getLanguageLabel(language: Language): string {
+  return (
+    SUPPORTED_LANGUAGES.find((option) => option.value === language)?.label ??
+    "English"
+  );
+}
+
+export function normalizeLanguage(language: string | null | undefined): Language {
+  if (
+    language &&
+    SUPPORTED_LANGUAGES.some((option) => option.value === language)
+  ) {
+    return language as Language;
+  }
+  return DEFAULT_LANGUAGE;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -36,6 +65,7 @@ export type Database = {
           name: string;
           slug: string;
           description: string | null;
+          language: Language;
           status: "active" | "inactive";
           created_by: string | null;
           created_at: string;
@@ -46,6 +76,7 @@ export type Database = {
           name: string;
           slug: string;
           description?: string | null;
+          language?: Language;
           status?: "active" | "inactive";
           created_by?: string | null;
           created_at?: string;
@@ -56,6 +87,7 @@ export type Database = {
           name?: string;
           slug?: string;
           description?: string | null;
+          language?: Language;
           status?: "active" | "inactive";
           created_by?: string | null;
           created_at?: string;

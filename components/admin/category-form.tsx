@@ -5,12 +5,21 @@ import { Button } from "@/components/ui/button";
 import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Category } from "@/lib/types";
+import type { Category, Language } from "@/lib/types";
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from "@/lib/types";
 
 export type CategoryFormValues = {
   name: string;
   description: string;
+  language: Language;
   status: "active" | "inactive";
 };
 
@@ -27,6 +36,9 @@ export function CategoryForm({
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [language, setLanguage] = useState<Language>(
+    initial?.language ?? DEFAULT_LANGUAGE,
+  );
   const [status, setStatus] = useState<"active" | "inactive">(
     initial?.status ?? "active",
   );
@@ -38,7 +50,7 @@ export function CategoryForm({
     setError(null);
     setLoading(true);
     try {
-      await onSubmit({ name, description, status });
+      await onSubmit({ name, description, language, status });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -54,8 +66,12 @@ export function CategoryForm({
           id="cat-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. food, travel, finance"
           required
         />
+        <p className="text-caption text-muted-foreground">
+          Category name should be in English.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="cat-desc">Description</Label>
@@ -67,19 +83,45 @@ export function CategoryForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="cat-status">Status</Label>
-        <select
-          id="cat-status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-          className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none"
+        <Label htmlFor="cat-language">Language</Label>
+        <Select
+          value={language}
+          onValueChange={(value) => setLanguage(value as Language)}
         >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+          <SelectTrigger id="cat-language" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SUPPORTED_LANGUAGES.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-caption text-muted-foreground">
+          Topics and blogs generated for this category will use this language.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="cat-status">Status</Label>
+        <Select
+          value={status}
+          onValueChange={(value) =>
+            setStatus(value as "active" | "inactive")
+          }
+        >
+          <SelectTrigger id="cat-status" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
             Cancel

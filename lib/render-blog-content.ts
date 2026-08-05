@@ -6,6 +6,21 @@ const KATEX_OPTIONS = {
   trust: false,
 };
 
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
+function wrapRenderedMath(tex: string, rendered: string, displayMode: boolean): string {
+  const escapedLatex = escapeHtmlAttr(tex.trim());
+  if (displayMode) {
+    return `<div class="math-display" data-latex="${escapedLatex}">${rendered}</div>`;
+  }
+  return `<span class="math-inline" data-latex="${escapedLatex}">${rendered}</span>`;
+}
+
 function renderLatex(tex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(tex.trim(), {
@@ -34,26 +49,22 @@ function renderLatexDelimiters(html: string): string {
   // Block: $$ ... $$ and \[ ... \]
   result = result.replace(
     /\$\$([\s\S]+?)\$\$/g,
-    (_, tex) =>
-      `<div class="math-display">${renderLatex(tex, true)}</div>`,
+    (_, tex) => wrapRenderedMath(tex, renderLatex(tex, true), true),
   );
   result = result.replace(
     /\\\[([\s\S]+?)\\\]/g,
-    (_, tex) =>
-      `<div class="math-display">${renderLatex(tex, true)}</div>`,
+    (_, tex) => wrapRenderedMath(tex, renderLatex(tex, true), true),
   );
 
   // Inline: $ ... $ and \( ... \) — only outside tags
   result = replaceInTextSegments(result, (text) => {
     let out = text.replace(
       /\\\(([\s\S]+?)\\\)/g,
-      (_, tex) =>
-        `<span class="math-inline">${renderLatex(tex, false)}</span>`,
+      (_, tex) => wrapRenderedMath(tex, renderLatex(tex, false), false),
     );
     out = out.replace(
       /(?<!\$)\$(?!\$)((?:\\.|[^\$\\])+?)\$(?!\$)/g,
-      (_, tex) =>
-        `<span class="math-inline">${renderLatex(tex, false)}</span>`,
+      (_, tex) => wrapRenderedMath(tex, renderLatex(tex, false), false),
     );
     return out;
   });
@@ -65,13 +76,11 @@ function renderMathScriptTags(html: string): string {
   return html
     .replace(
       /<script\s+type=["']math\/tex;\s*mode=display["']\s*>([\s\S]*?)<\/script>/gi,
-      (_, tex) =>
-        `<div class="math-display">${renderLatex(tex, true)}</div>`,
+      (_, tex) => wrapRenderedMath(tex, renderLatex(tex, true), true),
     )
     .replace(
       /<script\s+type=["']math\/tex["']\s*>([\s\S]*?)<\/script>/gi,
-      (_, tex) =>
-        `<span class="math-inline">${renderLatex(tex, false)}</span>`,
+      (_, tex) => wrapRenderedMath(tex, renderLatex(tex, false), false),
     );
 }
 
@@ -83,9 +92,7 @@ function renderDataLatexAttributes(html: string): string {
         /data-display=["']true["']/i.test(match) ||
         /class=["'][^"']*math-display/i.test(match);
       const rendered = renderLatex(latex, display);
-      const wrapper = display
-        ? `<div class="math-display">${rendered}</div>`
-        : `<span class="math-inline">${rendered}</span>`;
+      const wrapper = wrapRenderedMath(latex, rendered, display);
       // If it's a placeholder element, replace entirely; otherwise inject rendered math inside
       if (tag === "span" || tag === "div") {
         return wrapper;

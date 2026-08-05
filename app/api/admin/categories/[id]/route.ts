@@ -9,9 +9,18 @@ import type { Database } from "@/lib/types";
 type Ctx = { params: Promise<{ id: string }> };
 type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"];
 
+const languageSchema = z.enum([
+  "english",
+  "hindi",
+  "sanskrit",
+  "marathi",
+  "gujarati",
+]);
+
 const patchSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).nullable().optional(),
+  language: languageSchema.optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -32,6 +41,7 @@ export async function PATCH(request: Request, context: Ctx) {
   if (parsed.data.description !== undefined) {
     updates.description = parsed.data.description;
   }
+  if (parsed.data.language !== undefined) updates.language = parsed.data.language;
   if (parsed.data.status !== undefined) updates.status = parsed.data.status;
 
   if (parsed.data.name) {

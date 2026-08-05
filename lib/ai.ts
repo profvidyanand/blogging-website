@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { getLanguageLabel, type Language } from "@/lib/types";
+import { slugify } from "@/lib/slug";
 
 export interface GeneratedArticle {
   title: string;
@@ -15,21 +17,27 @@ const topicsSchema = z.object({
   topics: z.array(z.string().min(1)).min(1),
 });
 
-const articleSchema = z.object({
-  title: z.string().min(1),
-  seoTitle: z.string().min(1),
-  metaDescription: z.string().min(1),
-  summary: z.string().min(1),
-  content: z.string().min(1),
-  faq: z.array(
-    z.object({
-      question: z.string().min(1),
-      answer: z.string().min(1),
-    }),
-  ),
-  tags: z.array(z.string()),
-  slugBase: z.string().min(1),
-});
+const articleSchema = z
+  .object({
+    title: z.string().min(1),
+    seoTitle: z.string().min(1),
+    metaDescription: z.string().min(1),
+    summary: z.string().min(1),
+    content: z.string().min(1),
+    faq: z.array(
+      z.object({
+        question: z.string().min(1),
+        answer: z.string().min(1),
+      }),
+    ),
+    tags: z.array(z.string()).default([]),
+    slugBase: z.string().optional(),
+  })
+  .transform((data) => ({
+    ...data,
+    tags: data.tags ?? [],
+    slugBase: slugify(data.slugBase || data.title),
+  }));
 
 function getAiConfig() {
   const apiKey = process.env.AI_API_KEY;
@@ -38,12 +46,20 @@ function getAiConfig() {
     "",
   );
   const model = process.env.AI_MODEL || "gpt-4o-mini";
+  const maxTokens = Number(process.env.AI_MAX_TOKENS || "16384");
   if (!apiKey) throw new Error("AI_API_KEY is not configured");
-  return { apiKey, baseUrl, model };
+  return { apiKey, baseUrl, model, maxTokens };
+}
+
+function parseJsonContent(content: string): unknown {
+  const trimmed = content.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
+  const jsonText = fenced?.[1]?.trim() ?? trimmed;
+  return JSON.parse(jsonText) as unknown;
 }
 
 async function chatJson(system: string, user: string): Promise<unknown> {
-  const { apiKey, baseUrl, model } = getAiConfig();
+  const { apiKey, baseUrl, model, maxTokens } = getAiConfig();
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -54,6 +70,7 @@ async function chatJson(system: string, user: string): Promise<unknown> {
     body: JSON.stringify({
       model,
       temperature: 0.7,
+      max_tokens: maxTokens,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -68,11 +85,30 @@ async function chatJson(system: string, user: string): Promise<unknown> {
   }
 
   const data = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
   };
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error("AI returned empty content");
-  return JSON.parse(content) as unknown;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content?.trim();
+  if (!content) {
+    throw new Error("AI returned empty content");
+  }
+  if (choice?.finish_reason === "length") {
+    throw new Error("AI response was truncated; try again or use a shorter topic");
+  }
+
+  try {
+    return parseJsonContent(content);
+  } catch {
+    throw new Error("AI returned invalid JSON");
+  }
+}
+
+function formatSchemaError(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    return error.issues.map((issue) => issue.message).join("; ");
+  }
+  if (error instanceof Error) return error.message;
+  return "Unknown validation error";
 }
 
 async function chatJsonWithRetry<T>(
@@ -90,10 +126,12 @@ async function chatJsonWithRetry<T>(
     );
     try {
       return schema.parse(raw);
-    } catch {
-      throw firstError instanceof Error
-        ? firstError
-        : new Error("AI response failed schema validation");
+    } catch (secondError) {
+      const firstMessage = formatSchemaError(firstError);
+      const secondMessage = formatSchemaError(secondError);
+      throw new Error(
+        `AI response failed validation: ${secondMessage || firstMessage}`,
+      );
     }
   }
 }
@@ -101,9 +139,11 @@ async function chatJsonWithRetry<T>(
 export async function generateTopics(input: {
   categoryName: string;
   categoryDescription?: string;
+  language: Language;
   count: number;
 }): Promise<string[]> {
   const count = Math.min(100, Math.max(1, Math.floor(input.count)));
+  const languageLabel = getLanguageLabel(input.language);
   const system =
     'You are an SEO content strategist. Respond ONLY with valid JSON matching this schema: {"topics": string[]}';
   const user = [
@@ -111,6 +151,7 @@ export async function generateTopics(input: {
     input.categoryDescription
       ? `Category description: ${input.categoryDescription}`
       : "",
+    `Write every topic title in ${languageLabel} only.`,
     "Topics should be specific, searchable, and suitable for long-form SEO articles.",
   ]
     .filter(Boolean)
@@ -123,7 +164,9 @@ export async function generateTopics(input: {
 export async function generateArticle(input: {
   topic: string;
   categoryName: string;
+  language: Language;
 }): Promise<GeneratedArticle> {
+  const languageLabel = getLanguageLabel(input.language);
   const system = `You are an SEO content writer. Respond ONLY with valid JSON matching this schema:
 {
   "title": string,
@@ -133,14 +176,16 @@ export async function generateArticle(input: {
   "content": string (HTML with h2/h3/p/ul/li; for math use $inline$ or $$block$$ LaTeX, or native <math> MathML),
   "faq": [{"question": string, "answer": string}],
   "tags": string[],
-  "slugBase": string (lowercase kebab-case, no leading/trailing dashes)
+  "slugBase": string (lowercase kebab-case using Latin characters only, no leading/trailing dashes)
 }`;
 
   const user = [
     `Write a complete SEO blog article.`,
     `Category: ${input.categoryName}`,
     `Topic: ${input.topic}`,
-    "Include 3–6 FAQ items. Content should be substantial HTML (1000+ words equivalent).",
+    `Write the entire article in ${languageLabel} only. All fields except slugBase must be in ${languageLabel}.`,
+    "For slugBase, use romanized/transliterated lowercase kebab-case in Latin characters, even if the article is in another language.",
+    "Include 3–6 FAQ items. Content should be substantial HTML with multiple sections (roughly 800–1200 words).",
     "When formulas are needed, use LaTeX ($...$ inline, $$...$$ display) or MathML <math> elements.",
   ].join("\n");
 

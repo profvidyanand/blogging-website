@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { LanguageBadge } from "@/components/admin/language-badge";
 import {
   CategoryForm,
   type CategoryFormValues,
@@ -72,9 +74,15 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setCreateOpen(true)}>New Category</Button>
-      </div>
+      <PageHeader
+        title="Categories"
+        description="Manage categories assigned to you. Creating a category auto-assigns it to you."
+        actions={
+          <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
+            New Category
+          </Button>
+        }
+      />
 
       <DataTable
         rows={initial}
@@ -84,6 +92,7 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
           {
             key: "name",
             header: "Name",
+            mobileTitle: true,
             cell: (row) => (
               <Link
                 href={`/admin/categories/${row.id}`}
@@ -99,6 +108,11 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
             cell: (row) => (
               <code className="text-caption">{row.slug}</code>
             ),
+          },
+          {
+            key: "language",
+            header: "Language",
+            cell: (row) => <LanguageBadge language={row.language} />,
           },
           {
             key: "status",
@@ -119,6 +133,7 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
             key: "actions",
             header: "",
             className: "w-12",
+            mobileActions: true,
             cell: (row) => (
               <DropdownMenu>
                 <DropdownMenuTrigger
