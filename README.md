@@ -3,6 +3,13 @@
 Next.js (App Router) SEO blog + admin panel for AI-assisted topic/article generation.
 Deployed on Vercel. Backed by Supabase.
 
+## Docs
+
+| Guide | Audience |
+|-------|----------|
+| [`docs/PROJECT_GUIDE.md`](docs/PROJECT_GUIDE.md) | Full project map (stack, flow, public/admin, database, math/TTS, how to make small edits) |
+| [`docs/SETUP.md`](docs/SETUP.md) | Keys, accounts, and first-time setup |
+
 ## Setup
 
 **Full walkthrough (every key, every step):** [`docs/SETUP.md`](docs/SETUP.md)

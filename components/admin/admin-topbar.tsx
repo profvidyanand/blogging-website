@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronRight, LogOut, Menu } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,17 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { LoadingLabel } from "@/components/ui/spinner";
-import { createClient } from "@/lib/supabase/client";
 
 const routeLabels: Record<string, string> = {
   admin: "Dashboard",
@@ -76,56 +66,17 @@ function AdminBreadcrumbs() {
 }
 
 function UserAvatar({ email }: { email: string }) {
-  const router = useRouter();
-  const [loggingOut, setLoggingOut] = useState(false);
   const initials = email.slice(0, 2).toUpperCase();
 
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      router.push("/admin/login");
-      router.refresh();
-    } finally {
-      setLoggingOut(false);
-    }
-  }
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        }
-      >
-        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-          {initials}
-        </div>
-        <span className="hidden text-body-sm text-muted-foreground sm:inline">
-          {email}
-        </span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={handleLogout}
-          disabled={loggingOut}
-        >
-          <LogOut />
-          <LoadingLabel
-            loading={loggingOut}
-            label="Log out"
-            loadingLabel="Logging out…"
-          />
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-2">
+      <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+        {initials}
+      </div>
+      <span className="hidden text-body-sm text-muted-foreground sm:inline">
+        {email}
+      </span>
+    </div>
   );
 }
 
