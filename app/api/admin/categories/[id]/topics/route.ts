@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { generateTopics } from "@/lib/ai";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
-import { normalizeLanguage, type Category, type Topic } from "@/lib/types";
+import { DEFAULT_LANGUAGE, getLanguageLabel, getLanguageMap } from "@/lib/languages";
+import type { Category, Topic } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -82,10 +83,11 @@ export async function POST(request: Request, context: Ctx) {
 
   let topicStrings: string[];
   try {
+    const languageMap = await getLanguageMap(supabase);
     topicStrings = await generateTopics({
       categoryName: cat.name,
       categoryDescription: cat.description ?? undefined,
-      language: normalizeLanguage(cat.language),
+      languageLabel: getLanguageLabel(cat.language ?? DEFAULT_LANGUAGE, languageMap),
       count: parsed.data.count,
     });
   } catch (err) {

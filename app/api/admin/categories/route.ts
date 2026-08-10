@@ -5,20 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { jsonError, requireAdminApi } from "@/lib/api";
-import { DEFAULT_LANGUAGE } from "@/lib/types";
-
-const languageSchema = z.enum([
-  "english",
-  "hindi",
-  "sanskrit",
-  "marathi",
-  "gujarati",
-]);
+import { DEFAULT_LANGUAGE, languageExists } from "@/lib/languages";
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
   description: z.string().max(2000).optional(),
-  language: languageSchema.optional(),
+  language: z.string().min(1).max(80).optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -35,6 +27,10 @@ export async function POST(request: Request) {
   const { name, description, language = DEFAULT_LANGUAGE, status = "active" } =
     parsed.data;
   const admin = createAdminClient();
+
+  if (!(await languageExists(admin, language))) {
+    return jsonError("Invalid language", 400);
+  }
 
   const slug = await ensureUniqueSlug(name, async (candidate) => {
     const { data } = await admin

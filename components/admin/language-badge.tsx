@@ -1,14 +1,15 @@
 import { cn } from "@/lib/utils";
-import { getLanguageLabel, normalizeLanguage, type Language } from "@/lib/types";
+import { getLanguageLabel } from "@/lib/languages";
 
 export function LanguageBadge({
   language,
+  labels,
   className,
 }: {
-  language: Language | string | null | undefined;
+  language: string | null | undefined;
+  labels?: Record<string, string>;
   className?: string;
 }) {
-  const normalized = normalizeLanguage(language);
   return (
     <span
       className={cn(
@@ -16,7 +17,7 @@ export function LanguageBadge({
         className,
       )}
     >
-      {getLanguageLabel(normalized)}
+      {getLanguageLabel(language, labels)}
     </span>
   );
 }

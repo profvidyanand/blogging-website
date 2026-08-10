@@ -10,6 +10,7 @@ import { GetTopicsForm } from "@/components/admin/get-topics-form";
 import { AddTopicForm } from "@/components/admin/add-topic-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Category, Topic } from "@/lib/types";
+import { getLanguageMap } from "@/lib/languages";
 
 type Props = { params: Promise<{ categoryId: string }> };
 
@@ -18,11 +19,10 @@ export default async function CategoryDetailPage({ params }: Props) {
   const { categoryId } = await params;
   const supabase = await createClient();
 
-  const { data: category } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("id", categoryId)
-    .maybeSingle();
+  const [{ data: category }, languageLabels] = await Promise.all([
+    supabase.from("categories").select("*").eq("id", categoryId).maybeSingle(),
+    getLanguageMap(supabase),
+  ]);
 
   if (!category) notFound();
   const cat = category as Category;
@@ -46,7 +46,7 @@ export default async function CategoryDetailPage({ params }: Props) {
         description={cat.description ?? undefined}
         actions={
           <div className="flex items-center gap-2">
-            <LanguageBadge language={cat.language} />
+            <LanguageBadge language={cat.language} labels={languageLabels} />
             <StatusBadge status={cat.status} />
           </div>
         }

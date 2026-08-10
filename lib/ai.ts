@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getLanguageLabel, type Language } from "@/lib/types";
 import { slugify } from "@/lib/slug";
 
 export interface GeneratedArticle {
@@ -70,9 +69,19 @@ function getAiConfig() {
     "",
   );
   const model = process.env.AI_MODEL || "gpt-4o-mini";
-  const maxTokens = Number(process.env.AI_MAX_TOKENS || "16384");
+  const maxTokens = Number(process.env.AI_MAX_TOKENS || "4096");
   if (!apiKey) throw new Error("AI_API_KEY is not configured");
   return { apiKey, baseUrl, model, maxTokens };
+}
+
+/** Keep completion budget small for topic lists (Groq TPM limits are often ~8k total). */
+function topicMaxTokens(count: number): number {
+  const configured = Number(process.env.AI_MAX_TOKENS || "4096");
+  return Math.min(256 + count * 64, configured);
+}
+
+function articleMaxTokens(): number {
+  return Number(process.env.AI_MAX_TOKENS || "4096");
 }
 
 function parseJsonContent(content: string): unknown {
@@ -82,8 +91,13 @@ function parseJsonContent(content: string): unknown {
   return JSON.parse(jsonText) as unknown;
 }
 
-async function chatJson(system: string, user: string): Promise<unknown> {
+async function chatJson(
+  system: string,
+  user: string,
+  maxTokensOverride?: number,
+): Promise<unknown> {
   const { apiKey, baseUrl, model, maxTokens } = getAiConfig();
+  const effectiveMaxTokens = maxTokensOverride ?? maxTokens;
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -94,7 +108,7 @@ async function chatJson(system: string, user: string): Promise<unknown> {
     body: JSON.stringify({
       model,
       temperature: 0.7,
-      max_tokens: maxTokens,
+      max_tokens: effectiveMaxTokens,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -139,14 +153,16 @@ async function chatJsonWithRetry<T>(
   system: string,
   user: string,
   schema: z.ZodType<T>,
+  maxTokensOverride?: number,
 ): Promise<T> {
   try {
-    const raw = await chatJson(system, user);
+    const raw = await chatJson(system, user, maxTokensOverride);
     return schema.parse(raw);
   } catch (firstError) {
     const raw = await chatJson(
       system,
       `${user}\n\nYour last response was invalid JSON matching the schema. Retry and respond ONLY with valid JSON.`,
+      maxTokensOverride,
     );
     try {
       return schema.parse(raw);
@@ -163,11 +179,30 @@ async function chatJsonWithRetry<T>(
 export async function generateTopics(input: {
   categoryName: string;
   categoryDescription?: string;
-  language: Language;
+  languageLabel: string;
   count: number;
 }): Promise<string[]> {
   const count = Math.min(100, Math.max(1, Math.floor(input.count)));
-  const languageLabel = getLanguageLabel(input.language);
+  const batchSize = 15;
+  const topics: string[] = [];
+
+  for (let offset = 0; offset < count; offset += batchSize) {
+    const batchCount = Math.min(batchSize, count - offset);
+    const batch = await generateTopicBatch({ ...input, count: batchCount });
+    topics.push(...batch);
+  }
+
+  return topics.slice(0, count);
+}
+
+async function generateTopicBatch(input: {
+  categoryName: string;
+  categoryDescription?: string;
+  languageLabel: string;
+  count: number;
+}): Promise<string[]> {
+  const count = Math.min(100, Math.max(1, Math.floor(input.count)));
+  const languageLabel = input.languageLabel;
   const system =
     'You are an SEO content strategist. Respond ONLY with valid JSON matching this schema: {"topics": string[]}';
   const user = [
@@ -182,7 +217,12 @@ export async function generateTopics(input: {
     .filter(Boolean)
     .join("\n");
 
-  const result = await chatJsonWithRetry(system, user, topicsSchema);
+  const result = await chatJsonWithRetry(
+    system,
+    user,
+    topicsSchema,
+    topicMaxTokens(count),
+  );
   return result.topics.slice(0, count);
 }
 
@@ -190,9 +230,9 @@ export async function generateArticle(input: {
   topic: string;
   categoryName: string;
   categoryDescription?: string;
-  language: Language;
+  languageLabel: string;
 }): Promise<GeneratedArticle> {
-  const languageLabel = getLanguageLabel(input.language);
+  const languageLabel = input.languageLabel;
   const system = `You are an SEO content writer. Respond ONLY with valid JSON matching this schema:
 {
   "title": string,
@@ -225,5 +265,5 @@ export async function generateArticle(input: {
     .filter(Boolean)
     .join("\n");
 
-  return chatJsonWithRetry(system, user, articleSchema);
+  return chatJsonWithRetry(system, user, articleSchema, articleMaxTokens());
 }

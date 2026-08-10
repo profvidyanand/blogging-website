@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Admin } from "@/lib/types";
 
@@ -7,6 +8,32 @@ export type AuthAdmin = {
   email: string;
   fullName: string | null;
 };
+
+/** Ensures auth.users id has a matching public.admins row (needed for FK constraints). */
+export async function ensureAdminRecord(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("admins")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (existing) return;
+
+  const { error } = await admin.from("admins").insert({
+    id: user.id,
+    email: user.email ?? "",
+    full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
+  });
+
+  if (error && error.code !== "23505") {
+    throw new Error(error.message);
+  }
+}
 
 export async function requireAdmin(): Promise<AuthAdmin> {
   const supabase = await createClient();
@@ -17,6 +44,8 @@ export async function requireAdmin(): Promise<AuthAdmin> {
   if (!user) {
     redirect("/admin/login");
   }
+
+  await ensureAdminRecord(user);
 
   const { data: admin } = await supabase
     .from("admins")

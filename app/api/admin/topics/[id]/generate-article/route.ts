@@ -6,7 +6,8 @@ import { searchImageWithFallbacks, trackDownload } from "@/lib/unsplash";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
-import { normalizeLanguage, type Category, type FaqItem, type Topic } from "@/lib/types";
+import { DEFAULT_LANGUAGE, getLanguageLabel, getLanguageMap } from "@/lib/languages";
+import type { Category, FaqItem, Topic } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -43,11 +44,15 @@ export async function POST(_request: Request, context: Ctx) {
 
   let generated;
   try {
+    const languageMap = await getLanguageMap(supabase);
     generated = await generateArticle({
       topic: topic.topic,
       categoryName: category.name,
       categoryDescription: category.description ?? undefined,
-      language: normalizeLanguage(category.language),
+      languageLabel: getLanguageLabel(
+        category.language ?? DEFAULT_LANGUAGE,
+        languageMap,
+      ),
     });
   } catch (err) {
     console.error("Article generation failed:", err);

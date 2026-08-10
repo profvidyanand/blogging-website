@@ -6,34 +6,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type Language = "english" | "hindi" | "sanskrit" | "marathi" | "gujarati";
-
-export const SUPPORTED_LANGUAGES: { value: Language; label: string }[] = [
-  { value: "english", label: "English" },
-  { value: "hindi", label: "Hindi" },
-  { value: "sanskrit", label: "Sanskrit" },
-  { value: "marathi", label: "Marathi" },
-  { value: "gujarati", label: "Gujarati" },
-];
-
-export const DEFAULT_LANGUAGE: Language = "english";
-
-export function getLanguageLabel(language: Language): string {
-  return (
-    SUPPORTED_LANGUAGES.find((option) => option.value === language)?.label ??
-    "English"
-  );
-}
-
-export function normalizeLanguage(language: string | null | undefined): Language {
-  if (
-    language &&
-    SUPPORTED_LANGUAGES.some((option) => option.value === language)
-  ) {
-    return language as Language;
-  }
-  return DEFAULT_LANGUAGE;
-}
+/** Language code stored on categories (references public.languages.code). */
+export type Language = string;
 
 export type Database = {
   public: {
@@ -215,6 +189,24 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      languages: {
+        Row: {
+          code: string;
+          label: string;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          label: string;
+          created_at?: string;
+        };
+        Update: {
+          code?: string;
+          label?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

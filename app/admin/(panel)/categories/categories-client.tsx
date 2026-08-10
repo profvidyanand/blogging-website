@@ -27,10 +27,19 @@ import {
   type CategoryFormValues,
 } from "@/components/admin/category-form";
 import type { Category } from "@/lib/types";
+import type { LanguageRow } from "@/lib/languages";
 
 type Row = Category & { topicCount: number; articleCount: number };
 
-export function CategoriesClient({ initial }: { initial: Row[] }) {
+export function CategoriesClient({
+  initial,
+  languages,
+  languageLabels,
+}: {
+  initial: Row[];
+  languages: LanguageRow[];
+  languageLabels: Record<string, string>;
+}) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [editRow, setEditRow] = useState<Row | null>(null);
@@ -112,7 +121,9 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
           {
             key: "language",
             header: "Language",
-            cell: (row) => <LanguageBadge language={row.language} />,
+            cell: (row) => (
+              <LanguageBadge language={row.language} labels={languageLabels} />
+            ),
           },
           {
             key: "status",
@@ -167,6 +178,7 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
             <DialogTitle>New category</DialogTitle>
           </DialogHeader>
           <CategoryForm
+            languages={languages}
             submitLabel="Create"
             onCancel={() => setCreateOpen(false)}
             onSubmit={createCategory}
@@ -182,6 +194,7 @@ export function CategoriesClient({ initial }: { initial: Row[] }) {
           {editRow ? (
             <CategoryForm
               initial={editRow}
+              languages={languages}
               submitLabel="Save"
               onCancel={() => setEditRow(null)}
               onSubmit={updateCategory}

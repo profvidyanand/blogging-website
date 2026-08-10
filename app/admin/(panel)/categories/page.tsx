@@ -4,15 +4,19 @@ import { requireAdmin } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { CategoriesClient } from "./categories-client";
 import type { Category } from "@/lib/types";
+import { getLanguages } from "@/lib/languages";
 
 export default async function CategoriesPage() {
   await requireAdmin();
   const supabase = await createClient();
 
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data: categories }, languages] = await Promise.all([
+    supabase.from("categories").select("*").order("created_at", { ascending: false }),
+    getLanguages(supabase),
+  ]);
+  const languageLabels = Object.fromEntries(
+    languages.map((row) => [row.code, row.label]),
+  );
 
   const rows = (categories ?? []) as Category[];
 
@@ -38,7 +42,11 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      <CategoriesClient initial={withCounts} />
+      <CategoriesClient
+        initial={withCounts}
+        languages={languages}
+        languageLabels={languageLabels}
+      />
       {withCounts.length > 0 ? (
         <ul className="sr-only">
           {withCounts.map((c) => (

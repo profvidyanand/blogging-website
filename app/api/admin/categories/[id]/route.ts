@@ -4,23 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { jsonError, requireAdminApi } from "@/lib/api";
+import { languageExists } from "@/lib/languages";
 import type { Database } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"];
 
-const languageSchema = z.enum([
-  "english",
-  "hindi",
-  "sanskrit",
-  "marathi",
-  "gujarati",
-]);
-
 const patchSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).nullable().optional(),
-  language: languageSchema.optional(),
+  language: z.string().min(1).max(80).optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -41,7 +34,12 @@ export async function PATCH(request: Request, context: Ctx) {
   if (parsed.data.description !== undefined) {
     updates.description = parsed.data.description;
   }
-  if (parsed.data.language !== undefined) updates.language = parsed.data.language;
+  if (parsed.data.language !== undefined) {
+    if (!(await languageExists(supabase, parsed.data.language))) {
+      return jsonError("Invalid language", 400);
+    }
+    updates.language = parsed.data.language;
+  }
   if (parsed.data.status !== undefined) updates.status = parsed.data.status;
 
   if (parsed.data.name) {
