@@ -10,8 +10,10 @@ export interface GeneratedArticle {
   faq: { question: string; answer: string }[];
   tags: string[];
   slugBase: string;
-  /** Exactly 3 English Unsplash search phrases, most → least specific. */
+  /** Exactly 3 English Unsplash search phrases for the featured image. */
   imageQueries: string[];
+  /** Exactly 3 English Unsplash search phrases for a mid-article inline image. */
+  inlineImageQueries: string[];
 }
 
 const topicsSchema = z.object({
@@ -49,17 +51,22 @@ const articleSchema = z
     tags: z.array(z.string()).default([]),
     slugBase: z.string().optional(),
     imageQueries: z.array(z.string().trim().min(1)).length(3),
+    inlineImageQueries: z.array(z.string().trim().min(1)).length(3),
   })
   .transform((data) => ({
     ...data,
     tags: data.tags ?? [],
     slugBase: slugify(data.slugBase || data.title),
-    // Dedupe while preserving order; keep up to 3 for Unsplash fallbacks.
     imageQueries: normalizeImageQueries(data.imageQueries),
+    inlineImageQueries: normalizeImageQueries(data.inlineImageQueries),
   }))
   .refine((data) => data.imageQueries.length > 0, {
     path: ["imageQueries"],
     message: "imageQueries must contain at least one non-empty English query",
+  })
+  .refine((data) => data.inlineImageQueries.length > 0, {
+    path: ["inlineImageQueries"],
+    message: "inlineImageQueries must contain at least one non-empty English query",
   });
 
 function getAiConfig() {
@@ -243,7 +250,8 @@ export async function generateArticle(input: {
   "faq": [{"question": string, "answer": string}],
   "tags": string[],
   "slugBase": string (lowercase kebab-case using Latin characters only, no leading/trailing dashes),
-  "imageQueries": string[3] (exactly 3 distinct English Unsplash photo search phrases)
+  "imageQueries": string[3] (exactly 3 distinct English Unsplash photo search phrases for the featured cover image),
+  "inlineImageQueries": string[3] (exactly 3 distinct English Unsplash photo search phrases for a second inline image in the article body)
 }`;
 
   const user = [
@@ -253,14 +261,16 @@ export async function generateArticle(input: {
       ? `Category description (treat as editorial brief and content requirements): ${input.categoryDescription}`
       : "",
     `Topic: ${input.topic}`,
-    `Write the entire article in ${languageLabel} only. All fields except slugBase and imageQueries must be in ${languageLabel}.`,
+    `Write the entire article in ${languageLabel} only. All fields except slugBase, imageQueries, and inlineImageQueries must be in ${languageLabel}.`,
     "For slugBase, use romanized/transliterated lowercase kebab-case in Latin characters, even if the article is in another language.",
     "Include 3–6 FAQ items. Content should be substantial HTML with multiple sections (roughly 1000–1400 words).",
     "Follow the category description for tone, depth, and any special requirements (for example formulas, theorems, live market data, or other domain details).",
     "Do not add formulas, theorems, prices, or other specialized elements unless the category description or topic clearly calls for them.",
-    "We fetch a landscape featured image from Unsplash using your imageQueries. Provide exactly 3 English search phrases (2–5 concrete visual keywords each), ordered most specific to the article first, then broader fallbacks.",
-    "imageQueries must be English only (even for non-English articles). Prefer photorealistic, searchable subjects (people, places, objects, nature, rituals, tools) that match the article — not abstract SEO slogans, brand names, or text overlays.",
-    'Example: ["morning yoga meditation mat", "sunrise yoga outdoor practice", "peaceful meditation lifestyle"].',
+    "We fetch a landscape featured cover image from Unsplash using your imageQueries. Provide exactly 3 English search phrases (2–5 concrete visual keywords each), ordered most specific to the article first, then broader fallbacks.",
+    "We also fetch a second landscape image from Unsplash and place it midway through the article body using inlineImageQueries. Provide exactly 3 distinct English search phrases for a different but related visual (a complementary scene or subject — not the same phrases as imageQueries).",
+    "imageQueries and inlineImageQueries must be English only (even for non-English articles). Prefer photorealistic, searchable subjects (people, places, objects, nature, rituals, tools) that match the article — not abstract SEO slogans, brand names, or text overlays.",
+    'Example imageQueries: ["morning yoga meditation mat", "sunrise yoga outdoor practice", "peaceful meditation lifestyle"].',
+    'Example inlineImageQueries: ["yoga studio stretching class", "woman breathing exercise calm", "wellness lifestyle indoor"].',
   ]
     .filter(Boolean)
     .join("\n");

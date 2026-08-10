@@ -107,7 +107,7 @@ export function ArticlePreviewActions({
         {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
       </div>
 
-      <div className="blog-article mx-auto max-w-3xl">
+      <div className="blog-article w-full">
         <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
           {article.featured_image ? (
             // eslint-disable-next-line @next/next/no-img-element

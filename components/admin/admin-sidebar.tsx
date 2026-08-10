@@ -10,6 +10,7 @@ import {
   ExternalLink,
   LogOut,
   Settings,
+  MousePointerClick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ const contentNav = [
   { href: "/admin/categories", label: "Categories", icon: FolderOpen },
   { href: "/admin/articles", label: "Articles", icon: FileText },
   { href: "/admin/settings", label: "Site settings", icon: Settings },
+  { href: "/admin/extra-buttons", label: "Extra buttons", icon: MousePointerClick },
 ];
 
 export function AdminSidebar({

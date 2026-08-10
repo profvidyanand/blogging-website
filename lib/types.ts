@@ -135,6 +135,8 @@ export type Database = {
           tags: string[];
           featured_image: string | null;
           featured_image_credit: string | null;
+          inline_image: string | null;
+          inline_image_credit: string | null;
           author_name: string | null;
           view_count: number;
           status: "draft" | "scheduled" | "published" | "unpublished";
@@ -158,6 +160,8 @@ export type Database = {
           tags?: string[];
           featured_image?: string | null;
           featured_image_credit?: string | null;
+          inline_image?: string | null;
+          inline_image_credit?: string | null;
           author_name?: string | null;
           view_count?: number;
           status?: "draft" | "scheduled" | "published" | "unpublished";
@@ -181,6 +185,8 @@ export type Database = {
           tags?: string[];
           featured_image?: string | null;
           featured_image_credit?: string | null;
+          inline_image?: string | null;
+          inline_image_credit?: string | null;
           author_name?: string | null;
           view_count?: number;
           status?: "draft" | "scheduled" | "published" | "unpublished";
@@ -217,6 +223,8 @@ export type Database = {
           instagram_url: string;
           twitter_url: string;
           youtube_url: string;
+          linkedin_url: string;
+          extra_buttons: Json;
           updated_at: string;
         };
         Insert: {
@@ -225,6 +233,8 @@ export type Database = {
           instagram_url?: string;
           twitter_url?: string;
           youtube_url?: string;
+          linkedin_url?: string;
+          extra_buttons?: Json;
           updated_at?: string;
         };
         Update: {
@@ -233,6 +243,8 @@ export type Database = {
           instagram_url?: string;
           twitter_url?: string;
           youtube_url?: string;
+          linkedin_url?: string;
+          extra_buttons?: Json;
           updated_at?: string;
         };
         Relationships: [];

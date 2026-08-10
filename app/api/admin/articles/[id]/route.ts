@@ -5,6 +5,8 @@ import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
 import { revalidatePublicContent } from "@/lib/revalidate-public";
+import { sanitizeArticleHtml } from "@/lib/sanitize-article-html";
+import { syncInlineImageInContent } from "@/lib/inline-article-image";
 import type { Database } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -22,6 +24,8 @@ const patchSchema = z.object({
     .optional(),
   tags: z.array(z.string()).optional(),
   featuredImage: z.string().nullable().optional(),
+  inlineImage: z.string().nullable().optional(),
+  inlineImageCredit: z.string().nullable().optional(),
 });
 
 export async function PATCH(request: Request, context: Ctx) {
@@ -39,7 +43,7 @@ export async function PATCH(request: Request, context: Ctx) {
 
   const { data: existing } = await supabase
     .from("articles")
-    .select("slug, status, category_id")
+    .select("slug, status, category_id, content, inline_image, inline_image_credit")
     .eq("id", id)
     .maybeSingle();
 
@@ -50,10 +54,37 @@ export async function PATCH(request: Request, context: Ctx) {
   if (d.seoTitle !== undefined) updates.seo_title = d.seoTitle;
   if (d.metaDescription !== undefined) updates.meta_description = d.metaDescription;
   if (d.summary !== undefined) updates.summary = d.summary;
-  if (d.content !== undefined) updates.content = d.content;
   if (d.faq !== undefined) updates.faq = d.faq;
   if (d.tags !== undefined) updates.tags = d.tags;
   if (d.featuredImage !== undefined) updates.featured_image = d.featuredImage;
+
+  const contentTouched =
+    d.content !== undefined ||
+    d.inlineImage !== undefined ||
+    d.inlineImageCredit !== undefined;
+
+  if (contentTouched) {
+    const baseContent =
+      d.content !== undefined
+        ? sanitizeArticleHtml(d.content)
+        : (existing?.content ?? "");
+    const inlineImage =
+      d.inlineImage !== undefined ? d.inlineImage : (existing?.inline_image ?? null);
+    const inlineImageCredit =
+      d.inlineImageCredit !== undefined
+        ? d.inlineImageCredit
+        : (existing?.inline_image_credit ?? null);
+
+    updates.content = syncInlineImageInContent(
+      baseContent,
+      inlineImage,
+      inlineImageCredit,
+    );
+    updates.inline_image = inlineImage?.trim() ? inlineImage.trim() : null;
+    updates.inline_image_credit = inlineImage?.trim()
+      ? (inlineImageCredit?.trim() ?? null)
+      : null;
+  }
 
   if (d.slug !== undefined) {
     updates.slug = await ensureUniqueSlug(d.slug, async (candidate) => {

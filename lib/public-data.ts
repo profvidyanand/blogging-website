@@ -6,7 +6,10 @@ import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/cache-config";
 import { createPublicClient } from "@/lib/supabase/public";
 import {
   DEFAULT_SOCIAL_LINKS,
+  DEFAULT_EXTRA_BUTTONS,
+  normalizeExtraButtons,
   type SocialLinks,
+  type ExtraButton,
 } from "@/lib/site-config";
 import type { Article, Category } from "@/lib/types";
 
@@ -15,12 +18,14 @@ function mapSiteSettings(row: {
   instagram_url: string;
   twitter_url: string;
   youtube_url: string;
+  linkedin_url: string;
 }): SocialLinks {
   return {
     facebook: row.facebook_url,
     instagram: row.instagram_url,
     twitter: row.twitter_url,
     youtube: row.youtube_url,
+    linkedin: row.linkedin_url,
   };
 }
 
@@ -50,7 +55,9 @@ export async function getPublicSiteSettings(): Promise<SocialLinks> {
       const supabase = createPublicClient();
       const { data } = await supabase
         .from("site_settings")
-        .select("facebook_url, instagram_url, twitter_url, youtube_url")
+        .select(
+          "facebook_url, instagram_url, twitter_url, youtube_url, linkedin_url",
+        )
         .eq("id", 1)
         .maybeSingle();
 
@@ -61,6 +68,27 @@ export async function getPublicSiteSettings(): Promise<SocialLinks> {
     {
       revalidate: PUBLIC_REVALIDATE_SECONDS,
       tags: ["site-settings"],
+    },
+  )();
+}
+
+export async function getPublicExtraButtons(): Promise<ExtraButton[]> {
+  return unstable_cache(
+    async () => {
+      const supabase = createPublicClient();
+      const { data } = await supabase
+        .from("site_settings")
+        .select("extra_buttons")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (!data) return DEFAULT_EXTRA_BUTTONS;
+      return normalizeExtraButtons(data.extra_buttons);
+    },
+    ["extra-buttons"],
+    {
+      revalidate: PUBLIC_REVALIDATE_SECONDS,
+      tags: ["extra-buttons"],
     },
   )();
 }

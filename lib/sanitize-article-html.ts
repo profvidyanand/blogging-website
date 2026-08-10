@@ -1,0 +1,96 @@
+import sanitizeHtml from "sanitize-html";
+
+/** Tags allowed in stored article HTML (matches blog renderer + AI output). */
+const ALLOWED_TAGS = [
+  "p",
+  "br",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "ul",
+  "ol",
+  "li",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "s",
+  "strike",
+  "del",
+  "a",
+  "blockquote",
+  "code",
+  "pre",
+  "hr",
+  "figure",
+  "figcaption",
+  "img",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+  "span",
+  "div",
+  "sub",
+  "sup",
+  "math",
+  "semantics",
+  "annotation",
+  "mrow",
+  "mi",
+  "mo",
+  "mn",
+  "msup",
+  "msub",
+  "mfrac",
+  "msqrt",
+  "mroot",
+  "munder",
+  "mover",
+  "munderover",
+  "mtable",
+  "mtr",
+  "mtd",
+  "mtext",
+  "mspace",
+  "mstyle",
+  "mpadded",
+  "mphantom",
+  "menclose",
+  "mfenced",
+  "maligngroup",
+  "malignmark",
+];
+
+/**
+ * Strip unsafe markup while preserving blog formatting, inline images, and math.
+ */
+export function sanitizeArticleHtml(html: string): string {
+  if (!html?.trim()) return "";
+
+  return sanitizeHtml(html, {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ["href", "target", "rel", "title"],
+      img: ["src", "alt", "loading", "width", "height", "class"],
+      figure: ["class"],
+      span: ["class", "data-latex", "data-display"],
+      div: ["class", "data-latex", "data-display"],
+      math: ["xmlns", "display"],
+      "*": ["class"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", {
+        rel: "noopener noreferrer",
+        target: "_blank",
+      }),
+    },
+  }).trim();
+}

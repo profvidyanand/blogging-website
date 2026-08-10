@@ -52,7 +52,7 @@ export default async function BlogDetailPage({ params }: Props) {
   const viewCount = post.view_count ?? 0;
 
   return (
-    <article className="blog-article mx-auto max-w-3xl space-y-8">
+    <article className="blog-article w-full space-y-8">
       <ArticleViewTracker slug={post.slug} />
       {post.featured_image ? (
         // eslint-disable-next-line @next/next/no-img-element

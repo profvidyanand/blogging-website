@@ -13,11 +13,13 @@ const IMMEDIATE = { expire: 0 } as const;
 export function revalidatePublicContent(options: RevalidateOptions = {}) {
   revalidateTag("categories", IMMEDIATE);
   revalidateTag("site-settings", IMMEDIATE);
+  revalidateTag("extra-buttons", IMMEDIATE);
   revalidateTag("home", IMMEDIATE);
   revalidateTag("articles", IMMEDIATE);
   revalidateTag("sitemap", IMMEDIATE);
 
   revalidatePath("/");
+  revalidatePath("/about");
   revalidatePath("/sitemap");
   revalidatePath("/sitemap.xml");
 

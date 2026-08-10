@@ -45,7 +45,7 @@
   font-size: 1.125rem;
   line-height: 1.8;
   letter-spacing: 0.01em;
-  max-width: 68ch;
+  max-width: 100%;
 }
 
 .blog-content > *:first-child {
@@ -320,4 +320,13 @@
 
 .audio-player {
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Rich text editor placeholder (admin) */
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--blog-muted, oklch(0.52 0.01 260));
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }

@@ -14,7 +14,14 @@ type UnsplashSearchResponse = {
   }[];
 };
 
-export async function searchImage(query: string): Promise<UnsplashImage | null> {
+type SearchImageOptions = {
+  excludeIds?: string[];
+};
+
+export async function searchImage(
+  query: string,
+  options?: SearchImageOptions,
+): Promise<UnsplashImage | null> {
   const key = process.env.UNSPLASH_ACCESS_KEY;
   if (!key) {
     console.warn("UNSPLASH_ACCESS_KEY missing — skipping image search");
@@ -24,9 +31,11 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
   const trimmed = query.trim();
   if (!trimmed) return null;
 
+  const excludeIds = new Set(options?.excludeIds ?? []);
+
   const url = new URL("https://api.unsplash.com/search/photos");
   url.searchParams.set("query", trimmed);
-  url.searchParams.set("per_page", "1");
+  url.searchParams.set("per_page", excludeIds.size > 0 ? "10" : "1");
   url.searchParams.set("orientation", "landscape");
 
   const res = await fetch(url.toString(), {
@@ -39,7 +48,7 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
   }
 
   const data = (await res.json()) as UnsplashSearchResponse;
-  const photo = data.results?.[0];
+  const photo = data.results?.find((result) => !excludeIds.has(result.id));
   if (!photo) return null;
 
   const photographer = photo.user.name;
@@ -59,6 +68,7 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
  */
 export async function searchImageWithFallbacks(
   queries: string[],
+  options?: SearchImageOptions,
 ): Promise<UnsplashImage | null> {
   if (!process.env.UNSPLASH_ACCESS_KEY) {
     console.warn("UNSPLASH_ACCESS_KEY missing — skipping image search");
@@ -78,7 +88,7 @@ export async function searchImageWithFallbacks(
   for (let i = 0; i < candidates.length; i++) {
     const query = candidates[i]!;
     try {
-      const photo = await searchImage(query);
+      const photo = await searchImage(query, options);
       if (photo) {
         if (i > 0) {
           console.info(

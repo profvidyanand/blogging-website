@@ -8,12 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/spinner";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { resolveInlineImage } from "@/lib/inline-article-image";
 import { toast } from "@/lib/toast";
 import type { Article, FaqItem } from "@/lib/types";
 
 export function ArticleEditor({ article }: { article: Article }) {
   const router = useRouter();
   const faqInitial = (Array.isArray(article.faq) ? article.faq : []) as FaqItem[];
+
+  const initialInline = resolveInlineImage(article);
 
   const [title, setTitle] = useState(article.title);
   const [slug, setSlug] = useState(article.slug);
@@ -24,12 +28,17 @@ export function ArticleEditor({ article }: { article: Article }) {
   const [summary, setSummary] = useState(article.summary ?? "");
   const [content, setContent] = useState(article.content);
   const [featuredImage, setFeaturedImage] = useState(article.featured_image ?? "");
+  const [inlineImage, setInlineImage] = useState(initialInline?.url ?? "");
+  const [inlineImageCredit, setInlineImageCredit] = useState(
+    initialInline?.credit ?? "",
+  );
   const [tags, setTags] = useState((article.tags ?? []).join(", "));
   const [faq, setFaq] = useState<FaqItem[]>(
     faqInitial.length ? faqInitial : [{ question: "", answer: "" }],
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +56,8 @@ export function ArticleEditor({ article }: { article: Article }) {
           summary: summary || null,
           content,
           featuredImage: featuredImage || null,
+          inlineImage: inlineImage || null,
+          inlineImageCredit: inlineImageCredit || null,
           tags: tags
             .split(",")
             .map((t) => t.trim())
@@ -56,6 +67,16 @@ export function ArticleEditor({ article }: { article: Article }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
+      if (typeof data.article?.content === "string") {
+        setContent(data.article.content);
+        setEditorKey((key) => key + 1);
+      }
+      if (data.article?.inline_image !== undefined) {
+        setInlineImage(data.article.inline_image ?? "");
+      }
+      if (data.article?.inline_image_credit !== undefined) {
+        setInlineImageCredit(data.article.inline_image_credit ?? "");
+      }
       toast.success("Article saved");
       router.refresh();
     } catch (err) {
@@ -85,13 +106,16 @@ export function ArticleEditor({ article }: { article: Article }) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Content (HTML)</Label>
-            <Textarea
+            <Label>Article body</Label>
+            <RichTextEditor
+              key={editorKey}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={16}
-              className="font-mono text-xs"
+              onChange={setContent}
             />
+            <p className="text-xs text-muted-foreground">
+              Type or paste from Word or Google Docs. Use the toolbar for headings,
+              lists, and links — no HTML needed.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -131,6 +155,23 @@ export function ArticleEditor({ article }: { article: Article }) {
               className="max-h-48 rounded-lg border border-border object-cover"
             />
           ) : null}
+          <Field
+            label="Featured image URL 2"
+            value={inlineImage}
+            onChange={setInlineImage}
+          />
+          {inlineImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={inlineImage}
+              alt=""
+              className="max-h-48 rounded-lg border border-border object-cover"
+            />
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Shown midway through the article body. Leave empty to remove the
+            inline image.
+          </p>
           <Field label="Tags (comma-separated)" value={tags} onChange={setTags} />
         </CardContent>
       </Card>

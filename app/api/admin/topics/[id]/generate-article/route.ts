@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { generateArticle } from "@/lib/ai";
 import { SITE } from "@/lib/site-config";
 import { searchImageWithFallbacks, trackDownload } from "@/lib/unsplash";
+import {
+  buildInlineImageFigure,
+  insertInlineImageIntoContent,
+} from "@/lib/inline-article-image";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
@@ -73,13 +77,30 @@ export async function POST(_request: Request, context: Ctx) {
 
   let featuredImage: string | null = null;
   let featuredImageCredit: string | null = null;
+  let inlineImage: string | null = null;
+  let inlineImageCredit: string | null = null;
+  let content = generated.content;
 
   try {
-    const photo = await searchImageWithFallbacks(generated.imageQueries);
-    if (photo) {
-      await trackDownload(photo);
-      featuredImage = photo.url;
-      featuredImageCredit = photo.credit;
+    const featuredPhoto = await searchImageWithFallbacks(generated.imageQueries);
+    if (featuredPhoto) {
+      await trackDownload(featuredPhoto);
+      featuredImage = featuredPhoto.url;
+      featuredImageCredit = featuredPhoto.credit;
+    }
+
+    const inlinePhoto = await searchImageWithFallbacks(
+      generated.inlineImageQueries,
+      { excludeIds: featuredPhoto ? [featuredPhoto.id] : [] },
+    );
+    if (inlinePhoto) {
+      await trackDownload(inlinePhoto);
+      inlineImage = inlinePhoto.url;
+      inlineImageCredit = inlinePhoto.credit;
+      content = insertInlineImageIntoContent(
+        content,
+        buildInlineImageFigure(inlinePhoto.url, inlinePhoto.credit),
+      );
     }
   } catch (err) {
     console.error("Image pipeline failed (continuing without image):", err);
@@ -99,11 +120,13 @@ export async function POST(_request: Request, context: Ctx) {
       seo_title: generated.seoTitle,
       meta_description: generated.metaDescription,
       summary: generated.summary,
-      content: generated.content,
+      content,
       faq,
       tags: generated.tags,
       featured_image: featuredImage,
       featured_image_credit: featuredImageCredit,
+      inline_image: inlineImage,
+      inline_image_credit: inlineImageCredit,
       author_name: authorName,
       status: "draft",
       created_by: auth.admin.id,
@@ -132,11 +155,13 @@ export async function POST(_request: Request, context: Ctx) {
           seo_title: generated.seoTitle,
           meta_description: generated.metaDescription,
           summary: generated.summary,
-          content: generated.content,
+          content,
           faq,
           tags: generated.tags,
           featured_image: featuredImage,
           featured_image_credit: featuredImageCredit,
+          inline_image: inlineImage,
+          inline_image_credit: inlineImageCredit,
           author_name: authorName,
           status: "draft",
           created_by: auth.admin.id,

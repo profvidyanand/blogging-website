@@ -30,6 +30,11 @@ const fields: { key: keyof SocialLinks; label: string; placeholder: string }[] =
     label: "YouTube",
     placeholder: "https://youtube.com/@your-channel",
   },
+  {
+    key: "linkedin",
+    label: "LinkedIn",
+    placeholder: "https://linkedin.com/in/your-profile",
+  },
 ];
 
 export function SocialLinksForm({ initial }: { initial: SocialLinks }) {

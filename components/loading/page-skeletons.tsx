@@ -87,7 +87,7 @@ export function PublicSearchSkeleton() {
 
 export function BlogArticleSkeleton() {
   return (
-    <article className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+    <article className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-card">
       <Skeleton className="aspect-[2/1] w-full rounded-none" />
       <div className="space-y-6 px-6 py-8 sm:px-10 sm:py-10">
         <div className="flex gap-2">
