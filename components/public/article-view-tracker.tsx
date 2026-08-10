@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export function ArticleViewTracker({ slug }: { slug: string }) {
   useEffect(() => {
     const key = `viewed:${slug}`;
     if (sessionStorage.getItem(key)) return;
 
-    fetch(`/api/articles/${encodeURIComponent(slug)}/view`, {
-      method: "POST",
-    })
-      .then((res) => {
-        if (res.ok) sessionStorage.setItem(key, "1");
-      })
-      .catch(() => {});
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.rpc("increment_article_view_count", {
+          article_slug: slug,
+        });
+        if (!error) sessionStorage.setItem(key, "1");
+      } catch {
+        // Ignore view tracking failures on the client.
+      }
+    })();
   }, [slug]);
 
   return null;

@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { jsonError, requireAdminApi } from "@/lib/api";
 import { DEFAULT_LANGUAGE, languageExists } from "@/lib/languages";
+import { revalidatePublicContent } from "@/lib/revalidate-public";
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
@@ -76,6 +77,10 @@ export async function POST(request: Request) {
     entityId: category.id,
     metadata: { name, slug, language },
   });
+
+  if (status === "active") {
+    revalidatePublicContent({ categorySlug: category.slug });
+  }
 
   return NextResponse.json({ category });
 }

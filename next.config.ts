@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        has: [{ type: "query", key: "q" }],
+        destination: "/search?q=:q",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

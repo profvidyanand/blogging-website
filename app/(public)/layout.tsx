@@ -1,26 +1,22 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { getActiveCategories, getPublicSiteSettings } from "@/lib/public-data";
 import { PublicHeader } from "@/components/public/public-header";
 import { PublicFooter } from "@/components/public/public-footer";
-import { getSiteSettings } from "@/lib/site-settings";
 import type { Category } from "@/lib/types";
+
+export const revalidate = 54000;
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const [{ data: categories }, socialLinks] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("*")
-      .eq("status", "active")
-      .order("name"),
-    getSiteSettings(),
+  const [categories, socialLinks] = await Promise.all([
+    getActiveCategories(),
+    getPublicSiteSettings(),
   ]);
 
-  const cats = (categories ?? []) as Category[];
+  const cats = categories as Category[];
 
   return (
     <div className="flex min-h-full flex-col bg-background">

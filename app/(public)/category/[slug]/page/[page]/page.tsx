@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategoryArticles, getCategoryBySlug } from "@/lib/public-data";
 import { CategoryArticlesView } from "@/components/public/category-articles-view";
@@ -10,17 +9,25 @@ import {
 
 export const revalidate = 54000;
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string; page: string }>;
+};
 
-export default async function CategoryPage({ params }: Props) {
-  const { slug } = await params;
+export default async function CategoryPaginatedPage({ params }: Props) {
+  const { slug, page: pageParam } = await params;
+  const page = Number(pageParam);
+
+  if (!Number.isInteger(page) || page < 2 || page > CATEGORY_MAX_PAGE) {
+    notFound();
+  }
+
   const cat = await getCategoryBySlug(slug);
   if (!cat) notFound();
 
   const { posts, totalCount } = await getCategoryArticles(
     cat.id,
     cat.slug,
-    1,
+    page,
     CATEGORY_PAGE_SIZE,
   );
 
@@ -29,12 +36,14 @@ export default async function CategoryPage({ params }: Props) {
     Math.max(1, Math.ceil(totalCount / CATEGORY_PAGE_SIZE)),
   );
 
+  if (page > totalPages) notFound();
+
   return (
     <CategoryArticlesView
       cat={cat}
       posts={posts}
       totalCount={totalCount}
-      page={1}
+      page={page}
       totalPages={totalPages}
       accent={getCategoryAccent(cat.name)}
     />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { jsonError, requireAdminApi } from "@/lib/api";
+import { revalidatePublicContent } from "@/lib/revalidate-public";
 
 const urlField = z
   .string()
@@ -67,6 +68,8 @@ export async function PUT(request: Request) {
     .single();
 
   if (error) return jsonError(error.message, 500);
+
+  revalidatePublicContent();
 
   return NextResponse.json({
     settings: {

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSitemapPageData } from "@/lib/public-data";
 import { SITE } from "@/lib/site-config";
-import type { Article, Category } from "@/lib/types";
+
+export const revalidate = 54000;
 
 export const metadata: Metadata = {
   title: "Sitemap",
@@ -10,26 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SitemapPage() {
-  const supabase = await createClient();
-
-  const [{ data: categories }, { data: articles }] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("name, slug")
-      .eq("status", "active")
-      .order("name"),
-    supabase
-      .from("articles")
-      .select("title, slug, published_at")
-      .eq("status", "published")
-      .order("published_at", { ascending: false }),
-  ]);
-
-  const cats = (categories ?? []) as Pick<Category, "name" | "slug">[];
-  const posts = (articles ?? []) as Pick<
-    Article,
-    "title" | "slug" | "published_at"
-  >[];
+  const { categories: cats, articles: posts } = await getSitemapPageData();
 
   const staticPages = [
     { href: "/", label: "Home" },
@@ -54,6 +36,7 @@ export default async function SitemapPage() {
             <li key={page.href}>
               <Link
                 href={page.href}
+                prefetch={false}
                 className="text-body text-primary hover:underline"
               >
                 {page.label}
@@ -71,6 +54,7 @@ export default async function SitemapPage() {
               <li key={c.slug}>
                 <Link
                   href={`/category/${c.slug}`}
+                  prefetch={false}
                   className="text-body text-primary hover:underline"
                 >
                   {c.name}
@@ -93,6 +77,7 @@ export default async function SitemapPage() {
               <li key={post.slug}>
                 <Link
                   href={`/blog/${post.slug}`}
+                  prefetch={false}
                   className="text-body text-primary hover:underline"
                 >
                   {post.title}

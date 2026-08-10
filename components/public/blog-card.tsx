@@ -48,6 +48,7 @@ export function BlogCard({
     >
       <Link
         href={link}
+        prefetch={false}
         className="block aspect-[16/10] overflow-hidden bg-muted"
       >
         {featuredImage ? (
@@ -91,7 +92,7 @@ export function BlogCard({
           ) : null}
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">
-          <Link href={link} className="hover:text-primary">
+          <Link href={link} prefetch={false} className="hover:text-primary">
             {title}
           </Link>
         </h2>
@@ -102,6 +103,7 @@ export function BlogCard({
         ) : null}
         <Link
           href={link}
+          prefetch={false}
           className="mt-auto flex items-center gap-1 pt-2 text-body-sm font-semibold text-primary transition-colors hover:text-primary/80"
         >
           Read more <span aria-hidden>&rarr;</span>

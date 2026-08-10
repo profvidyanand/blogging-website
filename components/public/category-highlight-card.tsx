@@ -34,6 +34,7 @@ export function CategoryHighlightCard({
     >
       <Link
         href={`/blog/${slug}`}
+        prefetch={false}
         className="block size-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-28"
       >
         {featuredImage ? (
@@ -54,7 +55,7 @@ export function CategoryHighlightCard({
           {categoryName}
         </Badge>
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-          <Link href={`/blog/${slug}`} className="hover:text-primary">
+          <Link href={`/blog/${slug}`} prefetch={false} className="hover:text-primary">
             {title}
           </Link>
         </h3>

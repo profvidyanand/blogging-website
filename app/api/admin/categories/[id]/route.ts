@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { jsonError, requireAdminApi } from "@/lib/api";
+import { revalidatePublicContent } from "@/lib/revalidate-public";
 import { languageExists } from "@/lib/languages";
 import type { Database } from "@/lib/types";
 
@@ -29,6 +30,13 @@ export async function PATCH(request: Request, context: Ctx) {
   }
 
   const supabase = await createClient();
+
+  const { data: existingCategory } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
+
   const updates: CategoryUpdate = {};
   if (parsed.data.name !== undefined) updates.name = parsed.data.name;
   if (parsed.data.description !== undefined) {
@@ -64,6 +72,11 @@ export async function PATCH(request: Request, context: Ctx) {
   if (error) return jsonError(error.message, 500);
   if (!category) return jsonError("Category not found", 404);
 
+  revalidatePublicContent({
+    categorySlug: category.slug,
+    previousCategorySlug: existingCategory?.slug,
+  });
+
   await logActivity(supabase, {
     adminId: auth.admin.id,
     action: "category.update",
@@ -82,8 +95,18 @@ export async function DELETE(_request: Request, context: Ctx) {
   const { id } = await context.params;
   const supabase = await createClient();
 
+  const { data: existingCategory } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) return jsonError(error.message, 500);
+
+  if (existingCategory?.slug) {
+    revalidatePublicContent({ categorySlug: existingCategory.slug });
+  }
 
   await logActivity(supabase, {
     adminId: auth.admin.id,

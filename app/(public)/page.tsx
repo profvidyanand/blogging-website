@@ -1,110 +1,23 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getActiveCategories, getHomePageArticles } from "@/lib/public-data";
 import { BlogCard } from "@/components/public/blog-card";
 import { CategoryHighlightCard } from "@/components/public/category-highlight-card";
 import { CategoryTile } from "@/components/public/category-tile";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { getCategoryAccent } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
 import type { Article, Category } from "@/lib/types";
 
-type Props = { searchParams: Promise<{ q?: string }> };
+export const revalidate = 54000;
 
-export default async function HomePage({ searchParams }: Props) {
-  const { q = "" } = await searchParams;
-  const query = q.trim();
-  const supabase = await createClient();
-
-  if (query) {
-    const { data } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("status", "published")
-      .or(
-        `title.ilike.%${query}%,summary.ilike.%${query}%,content.ilike.%${query}%`,
-      )
-      .order("published_at", { ascending: false })
-      .limit(24);
-
-    const posts = (data ?? []) as Article[];
-    const categoryIds = [...new Set(posts.map((p) => p.category_id))];
-    let catMap = new Map<string, string>();
-
-    if (categoryIds.length) {
-      const { data: cats } = await supabase
-        .from("categories")
-        .select("id, name")
-        .in("id", categoryIds);
-      catMap = new Map(
-        ((cats ?? []) as Pick<Category, "id" | "name">[]).map((c) => [
-          c.id,
-          c.name,
-        ]),
-      );
-    }
-
-    return (
-      <div className="space-y-8">
-        <section className="space-y-2">
-          <h1 className="text-h1 text-foreground">Search results</h1>
-          <p className="text-body-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{posts.length}</span>{" "}
-            result{posts.length === 1 ? "" : "s"} for &ldquo;{query}&rdquo;
-          </p>
-        </section>
-
-        {posts.length === 0 ? (
-          <EmptyState
-            icon={Search}
-            title="No results found"
-            description={`We couldn't find any articles matching "${query}".`}
-          />
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-              <BlogCard
-                key={post.id}
-                title={post.title}
-                slug={post.slug}
-                summary={post.summary}
-                featuredImage={post.featured_image}
-                categoryName={catMap.get(post.category_id)}
-                publishedAt={post.published_at}
-                viewCount={post.view_count ?? 0}
-              />
-            ))}
-          </div>
-        )}
-
-        <p className="text-center text-body-sm text-muted-foreground">
-          <Link href="/" className="text-primary hover:underline">
-            Back to home
-          </Link>
-        </p>
-      </div>
-    );
-  }
-
-  const [{ data: categories }, { data: articles }] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("*")
-      .eq("status", "active")
-      .order("name"),
-    supabase
-      .from("articles")
-      .select("*")
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .limit(24),
+export default async function HomePage() {
+  const [cats, posts] = await Promise.all([
+    getActiveCategories(),
+    getHomePageArticles(),
   ]);
 
-  const cats = (categories ?? []) as Category[];
-  const posts = (articles ?? []) as Article[];
   const catMap = new Map(cats.map((c) => [c.id, c]));
-  const [featured, ...rest] = posts;
+  const [featured, ...rest] = posts as Article[];
   const featuredCategory = featured
     ? catMap.get(featured.category_id)
     : undefined;
@@ -149,6 +62,7 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
           <Link
             href={`/blog/${featured.slug}`}
+            prefetch={false}
             className="group relative block h-[360px] overflow-hidden rounded-2xl border border-border shadow-card transition-shadow hover:shadow-hover sm:h-[440px]"
           >
             {featured.featured_image ? (
@@ -197,7 +111,7 @@ export default async function HomePage({ searchParams }: Props) {
           {cats.map((c) => {
             const accent = getCategoryAccent(c.name);
             return (
-              <Link key={c.id} href={`/category/${c.slug}`}>
+              <Link key={c.id} href={`/category/${c.slug}`} prefetch={false}>
                 <Badge
                   variant="secondary"
                   className={`cursor-pointer px-3 py-1.5 transition-transform hover:-translate-y-0.5 ${accent.bg} ${accent.text}`}

@@ -26,7 +26,7 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (pathname === "/") {
+    if (pathname === "/search") {
       setQ(searchParams.get("q") ?? "");
     }
   }, [pathname, searchParams]);
@@ -40,7 +40,7 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
     e.preventDefault();
     const query = q.trim();
     startSearchTransition(() => {
-      router.push(query ? `/?q=${encodeURIComponent(query)}` : "/");
+      router.push(query ? `/search?q=${encodeURIComponent(query)}` : "/");
       setOpen(false);
     });
   }

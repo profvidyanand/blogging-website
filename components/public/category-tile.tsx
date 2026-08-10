@@ -11,6 +11,7 @@ export function CategoryTile({ category }: { category: Category }) {
   return (
     <Link
       href={`/category/${category.slug}`}
+      prefetch={false}
       className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-hover"
     >
       <span

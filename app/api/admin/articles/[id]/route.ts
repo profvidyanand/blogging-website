@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
+import { revalidatePublicContent } from "@/lib/revalidate-public";
 import type { Database } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -35,6 +36,13 @@ export async function PATCH(request: Request, context: Ctx) {
   }
 
   const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("articles")
+    .select("slug, status, category_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const d = parsed.data;
   const updates: ArticleUpdate = {};
 
@@ -69,6 +77,20 @@ export async function PATCH(request: Request, context: Ctx) {
   if (error) return jsonError(error.message, 500);
   if (!article) return jsonError("Article not found", 404);
 
+  if (existing?.status === "published" || article.status === "published") {
+    const { data: category } = await supabase
+      .from("categories")
+      .select("slug")
+      .eq("id", article.category_id)
+      .maybeSingle();
+
+    revalidatePublicContent({
+      articleSlug: article.slug,
+      previousArticleSlug: existing?.slug,
+      categorySlug: category?.slug,
+    });
+  }
+
   await logActivity(supabase, {
     adminId: auth.admin.id,
     action: "article.update",
@@ -85,8 +107,28 @@ export async function DELETE(_request: Request, context: Ctx) {
 
   const { id } = await context.params;
   const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("articles")
+    .select("slug, status, category_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("articles").delete().eq("id", id);
   if (error) return jsonError(error.message, 500);
+
+  if (existing?.status === "published") {
+    const { data: category } = await supabase
+      .from("categories")
+      .select("slug")
+      .eq("id", existing.category_id)
+      .maybeSingle();
+
+    revalidatePublicContent({
+      articleSlug: existing.slug,
+      categorySlug: category?.slug,
+    });
+  }
 
   await logActivity(supabase, {
     adminId: auth.admin.id,

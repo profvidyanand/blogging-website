@@ -2,7 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Eye, Mail, Share2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCategoryById,
+  getPublishedArticleBySlug,
+  getRelatedArticles,
+} from "@/lib/public-data";
 import { BlogCard } from "@/components/public/blog-card";
 import { ArticleViewTracker } from "@/components/public/article-view-tracker";
 import { AudioPlayer } from "@/components/public/audio-player";
@@ -13,61 +17,34 @@ import { getCategoryAccent } from "@/lib/category-colors";
 import { formatViewCount } from "@/lib/format-view-count";
 import { SITE } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
-import type { Article, Category, FaqItem } from "@/lib/types";
+import type { FaqItem } from "@/lib/types";
+
+export const revalidate = 54000;
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("articles")
-    .select("title, seo_title, meta_description, summary")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
+  const article = await getPublishedArticleBySlug(slug);
 
-  if (!data) return { title: "Article" };
-  const a = data as Pick<
-    Article,
-    "title" | "seo_title" | "meta_description" | "summary"
-  >;
+  if (!article) return { title: "Article" };
+
   return {
-    title: a.seo_title || a.title,
-    description: a.meta_description || a.summary || undefined,
+    title: article.seo_title || article.title,
+    description: article.meta_description || article.summary || undefined,
   };
 }
 
 export default async function BlogDetailPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const post = await getPublishedArticleBySlug(slug);
 
-  const { data: article } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
+  if (!post) notFound();
 
-  if (!article) notFound();
-  const post = article as Article;
-
-  const { data: category } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("id", post.category_id)
-    .maybeSingle();
-
-  const cat = category as Category | null;
-
-  const { data: related } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("category_id", post.category_id)
-    .eq("status", "published")
-    .neq("id", post.id)
-    .order("published_at", { ascending: false })
-    .limit(3);
+  const [category, related] = await Promise.all([
+    getCategoryById(post.category_id),
+    getRelatedArticles(post.category_id, post.id, post.slug),
+  ]);
 
   const faq = (Array.isArray(post.faq) ? post.faq : []) as FaqItem[];
   const shareUrl = `${SITE.url}/blog/${post.slug}`;
@@ -87,16 +64,17 @@ export default async function BlogDetailPage({ params }: Props) {
       ) : null}
 
       <header className="blog-article-header space-y-4">
-        {cat ? (
+        {category ? (
           <Link
-            href={`/category/${cat.slug}`}
+            href={`/category/${category.slug}`}
+            prefetch={false}
             className={cn(
               "inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80",
-              getCategoryAccent(cat.name).bg,
-              getCategoryAccent(cat.name).text
+              getCategoryAccent(category.name).bg,
+              getCategoryAccent(category.name).text,
             )}
           >
-            {cat.name}
+            {category.name}
           </Link>
         ) : null}
         <h1 className="blog-article-title">{post.title}</h1>
@@ -113,9 +91,7 @@ export default async function BlogDetailPage({ params }: Props) {
               })}
             </time>
           ) : null}
-          {post.author_name ? (
-            <span>{post.author_name}</span>
-          ) : null}
+          {post.author_name ? <span>{post.author_name}</span> : null}
           <span className="inline-flex items-center gap-1">
             <Eye className="size-3.5" aria-hidden />
             {formatViewCount(viewCount)}
@@ -161,18 +137,18 @@ export default async function BlogDetailPage({ params }: Props) {
         </a>
       </section>
 
-      {(related ?? []).length > 0 ? (
+      {related.length > 0 ? (
         <section className="space-y-4 border-t border-border pt-8">
           <h2 className="text-h2">Related articles</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            {(related as Article[]).map((r) => (
+            {related.map((r) => (
               <BlogCard
                 key={r.id}
                 title={r.title}
                 slug={r.slug}
                 summary={r.summary}
                 featuredImage={r.featured_image}
-                categoryName={cat?.name}
+                categoryName={category?.name}
                 publishedAt={r.published_at}
                 viewCount={r.view_count ?? 0}
               />
