@@ -21,8 +21,11 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
     return null;
   }
 
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+
   const url = new URL("https://api.unsplash.com/search/photos");
-  url.searchParams.set("query", query);
+  url.searchParams.set("query", trimmed);
   url.searchParams.set("per_page", "1");
   url.searchParams.set("orientation", "landscape");
 
@@ -31,7 +34,7 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
   });
 
   if (!res.ok) {
-    console.error("Unsplash search failed:", res.status);
+    console.error("Unsplash search failed:", res.status, `query="${trimmed}"`);
     return null;
   }
 
@@ -40,10 +43,7 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
   if (!photo) return null;
 
   const photographer = photo.user.name;
-  const profile = photo.user.links?.html;
-  const credit = profile
-    ? `Photo by ${photographer} on Unsplash`
-    : `Photo by ${photographer} on Unsplash`;
+  const credit = `Photo by ${photographer} on Unsplash`;
 
   return {
     id: photo.id,
@@ -51,6 +51,55 @@ export async function searchImage(query: string): Promise<UnsplashImage | null> 
     downloadLocation: photo.links.download_location,
     credit,
   };
+}
+
+/**
+ * Try Unsplash search queries in order. Stops at the first photo found.
+ * Each null/error counts as a failure and advances to the next query.
+ */
+export async function searchImageWithFallbacks(
+  queries: string[],
+): Promise<UnsplashImage | null> {
+  if (!process.env.UNSPLASH_ACCESS_KEY) {
+    console.warn("UNSPLASH_ACCESS_KEY missing — skipping image search");
+    return null;
+  }
+
+  const candidates = queries
+    .map((q) => q.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (candidates.length === 0) {
+    console.warn("Unsplash: no image queries provided — skipping image search");
+    return null;
+  }
+
+  for (let i = 0; i < candidates.length; i++) {
+    const query = candidates[i]!;
+    try {
+      const photo = await searchImage(query);
+      if (photo) {
+        if (i > 0) {
+          console.info(
+            `Unsplash: matched on fallback query #${i + 1}: "${query}"`,
+          );
+        }
+        return photo;
+      }
+      console.warn(
+        `Unsplash: no results for query #${i + 1}/${candidates.length}: "${query}"`,
+      );
+    } catch (err) {
+      console.error(
+        `Unsplash: search failed for query #${i + 1}/${candidates.length}: "${query}"`,
+        err,
+      );
+    }
+  }
+
+  console.warn("Unsplash: all image query fallbacks exhausted — continuing without image");
+  return null;
 }
 
 export async function trackDownload(photo: UnsplashImage): Promise<void> {

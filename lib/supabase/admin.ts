@@ -8,7 +8,6 @@ import type { Database } from "@/lib/types";
  * Use ONLY for:
  * 1. POST /api/admin/categories (atomic category + assignment)
  * 2. GET /api/admin/dashboard/stats (manually scoped aggregates)
- * 3. Cron scheduled→published sweep
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

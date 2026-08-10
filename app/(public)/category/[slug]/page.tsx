@@ -73,6 +73,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               featuredImage={post.featured_image}
               categoryName={cat.name}
               publishedAt={post.published_at}
+              viewCount={post.view_count ?? 0}
             />
           ))}
         </div>

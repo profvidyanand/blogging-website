@@ -3,15 +3,89 @@ import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
 import { CategoryHighlightCard } from "@/components/public/category-highlight-card";
 import { CategoryTile } from "@/components/public/category-tile";
-import { SearchBar } from "@/components/public/search-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { getCategoryAccent } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
 import type { Article, Category } from "@/lib/types";
 
-export default async function HomePage() {
+type Props = { searchParams: Promise<{ q?: string }> };
+
+export default async function HomePage({ searchParams }: Props) {
+  const { q = "" } = await searchParams;
+  const query = q.trim();
   const supabase = await createClient();
+
+  if (query) {
+    const { data } = await supabase
+      .from("articles")
+      .select("*")
+      .eq("status", "published")
+      .or(
+        `title.ilike.%${query}%,summary.ilike.%${query}%,content.ilike.%${query}%`,
+      )
+      .order("published_at", { ascending: false })
+      .limit(24);
+
+    const posts = (data ?? []) as Article[];
+    const categoryIds = [...new Set(posts.map((p) => p.category_id))];
+    let catMap = new Map<string, string>();
+
+    if (categoryIds.length) {
+      const { data: cats } = await supabase
+        .from("categories")
+        .select("id, name")
+        .in("id", categoryIds);
+      catMap = new Map(
+        ((cats ?? []) as Pick<Category, "id" | "name">[]).map((c) => [
+          c.id,
+          c.name,
+        ]),
+      );
+    }
+
+    return (
+      <div className="space-y-8">
+        <section className="space-y-2">
+          <h1 className="text-h1 text-foreground">Search results</h1>
+          <p className="text-body-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{posts.length}</span>{" "}
+            result{posts.length === 1 ? "" : "s"} for &ldquo;{query}&rdquo;
+          </p>
+        </section>
+
+        {posts.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No results found"
+            description={`We couldn't find any articles matching "${query}".`}
+          />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((post) => (
+              <BlogCard
+                key={post.id}
+                title={post.title}
+                slug={post.slug}
+                summary={post.summary}
+                featuredImage={post.featured_image}
+                categoryName={catMap.get(post.category_id)}
+                publishedAt={post.published_at}
+                viewCount={post.view_count ?? 0}
+              />
+            ))}
+          </div>
+        )}
+
+        <p className="text-center text-body-sm text-muted-foreground">
+          <Link href="/" className="text-primary hover:underline">
+            Back to home
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   const [{ data: categories }, { data: articles }] = await Promise.all([
     supabase
@@ -44,7 +118,7 @@ export default async function HomePage() {
       article: posts.find((p) => p.category_id === c.id),
     }))
     .filter((entry): entry is { category: Category; article: Article } =>
-      Boolean(entry.article)
+      Boolean(entry.article),
     )
     .slice(0, 6);
 
@@ -60,12 +134,9 @@ export default async function HomePage() {
           Discover insights that matter
         </h1>
         <p className="mx-auto max-w-xl text-body text-muted-foreground">
-          Stay informed with AI-assisted, SEO-ready articles covering every
-          category &mdash; from breaking news to deep dives.
+          Thoughtful articles on spirituality, wisdom, and purposeful living
+          &mdash; curated for seekers and lifelong learners.
         </p>
-        <div className="mx-auto max-w-lg">
-          <SearchBar />
-        </div>
       </section>
 
       {featured ? (
@@ -112,7 +183,7 @@ export default async function HomePage() {
                 >
                   {new Date(featured.published_at).toLocaleDateString(
                     undefined,
-                    { month: "short", day: "numeric", year: "numeric" }
+                    { month: "short", day: "numeric", year: "numeric" },
                   )}
                 </time>
               ) : null}
@@ -175,15 +246,7 @@ export default async function HomePage() {
       ) : null}
 
       <section>
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-h2 text-foreground">Latest articles</h2>
-          <Link
-            href="/search"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            View all
-          </Link>
-        </div>
+        <h2 className="mb-5 text-h2 text-foreground">Latest articles</h2>
         {latestGrid.length === 0 && !featured ? (
           <p className="text-muted-foreground">No published articles yet.</p>
         ) : latestGrid.length === 0 ? (
@@ -201,6 +264,7 @@ export default async function HomePage() {
                 featuredImage={post.featured_image}
                 categoryName={catMap.get(post.category_id)?.name}
                 publishedAt={post.published_at}
+                viewCount={post.view_count ?? 0}
               />
             ))}
           </div>

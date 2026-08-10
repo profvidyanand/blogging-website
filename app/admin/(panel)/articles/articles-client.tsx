@@ -14,15 +14,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import { ScheduleDialog } from "@/components/admin/schedule-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { LoadingLabel } from "@/components/ui/spinner";
+import { formatViewCount } from "@/lib/format-view-count";
 import { toast } from "@/lib/toast";
 import type { Article, Category } from "@/lib/types";
 
 type Row = Article & { categoryName?: string };
+
+const ALL = "all";
 
 export function ArticlesClient({
   articles,
@@ -35,11 +44,10 @@ export function ArticlesClient({
 }) {
   const router = useRouter();
   const [isFiltering, startFilterTransition] = useTransition();
-  const [status, setStatus] = useState(filters.status ?? "");
-  const [categoryId, setCategoryId] = useState(filters.categoryId ?? "");
+  const [status, setStatus] = useState(filters.status ?? ALL);
+  const [categoryId, setCategoryId] = useState(filters.categoryId ?? ALL);
   const [q, setQ] = useState(filters.q ?? "");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [scheduleId, setScheduleId] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"publish" | "unpublish" | null>(
     null,
@@ -48,8 +56,8 @@ export function ArticlesClient({
   function applyFilters(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (categoryId) params.set("categoryId", categoryId);
+    if (status && status !== ALL) params.set("status", status);
+    if (categoryId && categoryId !== ALL) params.set("categoryId", categoryId);
     if (q.trim()) params.set("q", q.trim());
     startFilterTransition(() => {
       router.push(`/admin/articles?${params.toString()}`);
@@ -87,19 +95,6 @@ export function ArticlesClient({
     router.refresh();
   }
 
-  async function scheduleArticle(iso: string) {
-    if (!scheduleId) return;
-    const res = await fetch(`/api/admin/articles/${scheduleId}/schedule`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scheduledAt: iso }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Schedule failed");
-    toast.success("Article scheduled");
-    router.refresh();
-  }
-
   return (
     <div className="space-y-4">
       <Card className="shadow-card">
@@ -112,38 +107,47 @@ export function ArticlesClient({
               <Label htmlFor="filter-status" className="text-caption">
                 Status
               </Label>
-              <select
-                id="filter-status"
+              <Select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onValueChange={(value) => {
+                  if (value != null) setStatus(value);
+                }}
                 disabled={isFiltering}
-                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               >
-                <option value="">All</option>
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="published">Published</option>
-                <option value="unpublished">Unpublished</option>
-              </select>
+                <SelectTrigger id="filter-status" className="h-10 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="unpublished">Unpublished</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="filter-category" className="text-caption">
                 Category
               </Label>
-              <select
-                id="filter-category"
+              <Select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onValueChange={(value) => {
+                  if (value != null) setCategoryId(value);
+                }}
                 disabled={isFiltering}
-                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               >
-                <option value="">All</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="filter-category" className="h-10 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="filter-q" className="text-caption">
@@ -200,6 +204,11 @@ export function ArticlesClient({
             key: "status",
             header: "Status",
             cell: (row) => <StatusBadge status={row.status} />,
+          },
+          {
+            key: "views",
+            header: "Views",
+            cell: (row) => formatViewCount(row.view_count ?? 0),
           },
           {
             key: "actions",
@@ -277,12 +286,6 @@ export function ArticlesClient({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
-                    disabled={isRowBusy}
-                    onClick={() => setScheduleId(row.id)}
-                  >
-                    Schedule
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     variant="destructive"
                     disabled={isRowBusy}
                     onClick={() => setDeleteId(row.id)}
@@ -305,12 +308,6 @@ export function ArticlesClient({
         confirmLabel="Delete"
         destructive
         onConfirm={deleteArticle}
-      />
-
-      <ScheduleDialog
-        open={!!scheduleId}
-        onOpenChange={(o) => !o && setScheduleId(null)}
-        onSchedule={scheduleArticle}
       />
     </div>
   );

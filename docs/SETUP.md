@@ -12,14 +12,13 @@ Copy [`.env.example`](.env.example) to `.env.local` (or `.env`) and fill values 
 |---------|------------------|------------------|----------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Yes | All DB/auth calls |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → API → publishable / anon key (`sb_publishable_…` or `eyJ…`) | Yes | Client + RLS-bound server |
-| `SUPABASE_SECRET_KEY` | Supabase → API → secret / service_role (`sb_secret_…` or `eyJ…`) | **No** | Category create, dashboard stats, cron |
+| `SUPABASE_SECRET_KEY` | Supabase → API → secret / service_role (`sb_secret_…` or `eyJ…`) | **No** | Category create, dashboard stats |
 | `AI_API_KEY` | OpenAI (or compatible provider) | **No** | Topic + article generation |
 | `AI_API_BASE_URL` | Provider docs (default OpenAI) | **No** | AI endpoint |
 | `AI_MODEL` | Provider model list | **No** | Model name |
 | `UNSPLASH_ACCESS_KEY` | Unsplash Developers → App | **No** | Featured images |
-| `CRON_SECRET` | You invent a random string | **No** | Optional local cron debug |
 
-Never commit `.env`, `.env.local`, or `.dev.vars`. Never put `SUPABASE_SECRET_KEY` or `AI_API_KEY` in `NEXT_PUBLIC_*` vars.
+Never commit `.env` or `.env.local`. Never put `SUPABASE_SECRET_KEY` or `AI_API_KEY` in `NEXT_PUBLIC_*` vars.
 
 ---
 
@@ -159,12 +158,6 @@ UNSPLASH_ACCESS_KEY=your_unsplash_access_key
 
 If this is missing, article generation still works — featured image stays empty and you can paste a URL in Edit Article.
 
-**Optional:**
-
-```env
-CRON_SECRET=generate_a_long_random_string
-```
-
 ---
 
 ## Step 7 — Run locally and smoke-test
@@ -193,55 +186,44 @@ Open:
 
 ---
 
-## Step 8 — Deploy to Cloudflare Workers (production)
+## Step 8 — Deploy to Vercel (production)
 
-Local `.env.local` is **not** used by the Worker. You must set vars/secrets on Cloudflare.
+Local `.env.local` is **not** used in production. Set environment variables in Vercel.
 
-### 8a — Install Wrangler auth
+### 8a — Connect the repo
 
-```bash
-npx wrangler login
-```
+1. Go to [https://vercel.com/new](https://vercel.com/new).
+2. Import your GitHub repository.
+3. Framework preset: **Next.js** (auto-detected).
 
-### 8b — Fill non-secret vars in `wrangler.jsonc`
+### 8b — Set environment variables
 
-Edit the `vars` block:
+In Vercel → Project → **Settings** → **Environment Variables**, add every var from [`.env.example`](.env.example):
 
-```jsonc
-"vars": {
-  "NEXT_PUBLIC_SUPABASE_URL": "https://xxxx.supabase.co",
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_...",
-  "AI_API_BASE_URL": "https://api.openai.com/v1",
-  "AI_MODEL": "gpt-4o-mini"
-}
-```
+| Variable | Notes |
+|----------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Plain |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Plain |
+| `SUPABASE_SECRET_KEY` | Secret |
+| `AI_API_KEY` | Secret |
+| `AI_API_BASE_URL` | Plain |
+| `AI_MODEL` | Plain |
+| `UNSPLASH_ACCESS_KEY` | Secret (optional) |
 
-### 8c — Put secrets (interactive; values not stored in git)
+### 8c — Supabase Auth URLs
 
-```bash
-npx wrangler secret put SUPABASE_SECRET_KEY
-npx wrangler secret put AI_API_KEY
-npx wrangler secret put UNSPLASH_ACCESS_KEY
-npx wrangler secret put CRON_SECRET
-```
+In Supabase → **Authentication** → **URL Configuration**:
+
+- **Site URL:** your Vercel production URL (e.g. `https://your-app.vercel.app`)
+- **Redirect URLs:** add `https://your-app.vercel.app/**` and `http://localhost:3000/**`
 
 ### 8d — Deploy
 
-```bash
-npm run deploy
-```
-
-Or: [`scripts/deploy.ps1`](scripts/deploy.ps1) / [`scripts/deploy.sh`](scripts/deploy.sh).
+Push to your connected branch, or click **Deploy** in the Vercel dashboard. Vercel runs `npm run build` automatically.
 
 ### 8e — Production smoke test
 
-Same flow as Step 7 on the Worker URL. Cron runs every 5 minutes (`*/5 * * * *` in `wrangler.jsonc`) and publishes due `scheduled` articles.
-
-Local cron test:
-
-```bash
-npx wrangler dev --test-scheduled
-```
+Same flow as Step 7 on your Vercel URL.
 
 ---
 
@@ -257,7 +239,8 @@ npx wrangler dev --test-scheduled
 - [ ] `AI_API_KEY` + `AI_API_BASE_URL` + `AI_MODEL` set
 - [ ] `UNSPLASH_ACCESS_KEY` set (optional but recommended)
 - [ ] Local smoke: login → topics → generate → publish
-- [ ] Wrangler login + `vars` + `secret put` + `npm run deploy`
+- [ ] Vercel env vars set + GitHub connected
+- [ ] Supabase Auth redirect URLs updated
 - [ ] Production smoke test
 
 ---
@@ -269,7 +252,7 @@ npx wrangler dev --test-scheduled
 | Using secret key in `NEXT_PUBLIC_*` | Only publishable/anon is public |
 | Skipping migration | Auth/login may work but categories/articles fail |
 | Creating admin only in `admins` table | Must create via **Auth → Users** so login works |
-| Deploy without secrets | Worker AI/category-create will fail at runtime |
+| Deploy without secrets | AI/category-create will fail at runtime |
 | Forgetting AI billing | Topic/article generation returns 502 |
 
 ---
@@ -281,5 +264,4 @@ npx wrangler dev --test-scheduled
 | Env template | [`.env.example`](.env.example) |
 | DB schema + RLS | [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) |
 | Seed examples | [`supabase/seed.sql`](supabase/seed.sql) |
-| Worker vars shape | [`wrangler.jsonc`](wrangler.jsonc) |
 | Short overview | [`README.md`](README.md) |

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Loader2, Pencil, FilePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -14,6 +14,7 @@ import { DataTable } from "@/components/admin/data-table";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EditTopicDialog } from "@/components/admin/edit-topic-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { fetchJson } from "@/lib/fetch-json";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { Topic } from "@/lib/types";
@@ -92,12 +93,13 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
   async function generateArticle(topicId: string) {
     setGeneratingId(topicId);
     try {
-      const res = await fetch(`/api/admin/topics/${topicId}/generate-article`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Generation failed");
-      toast.success("Article generated");
+      const { res, data } = await fetchJson<{ error?: string; article?: { id: string } }>(
+        `/api/admin/topics/${topicId}/generate-article`,
+        { method: "POST" },
+      );
+      if (!res.ok) throw new Error(data.error || "Could not create article");
+      if (!data.article?.id) throw new Error("Could not create article");
+      toast.success("Article draft created");
       router.push(`/admin/articles/${data.article.id}`);
       router.refresh();
     } catch (err) {
@@ -112,7 +114,7 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
       <DataTable
         rows={topics}
         emptyTitle="No topics yet"
-        emptyMessage="Generate topics with AI or add one manually."
+        emptyMessage="Suggest topics or add one manually."
         columns={[
           {
             key: "topic",
@@ -141,10 +143,10 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
                   <IconAction
                     label={
                       isGenerating
-                        ? "Generating blog…"
+                        ? "Creating draft…"
                         : canGenerate
-                          ? "Generate blog"
-                          : "Blog already generated"
+                          ? "Create article draft"
+                          : "Article already created"
                     }
                     disabled={!canGenerate}
                     onClick={() => generateArticle(row.id)}
@@ -152,7 +154,7 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
                     {isGenerating ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      <Sparkles className="size-4" />
+                      <FilePlus className="size-4" />
                     )}
                   </IconAction>
                   <IconAction

@@ -80,7 +80,11 @@ export function CategoryForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
+          placeholder="Optional editorial brief for this category (e.g. tone, depth, special topics)."
         />
+        <p className="text-caption text-muted-foreground">
+          Used as guidance when creating topics and articles for this category.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="cat-language">Language</Label>
@@ -100,7 +104,7 @@ export function CategoryForm({
           </SelectContent>
         </Select>
         <p className="text-caption text-muted-foreground">
-          Topics and blogs generated for this category will use this language.
+          Topics and articles created for this category will use this language.
         </p>
       </div>
       <div className="space-y-2">

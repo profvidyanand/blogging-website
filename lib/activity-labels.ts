@@ -35,18 +35,6 @@ export function formatActivityMessage(
       return `Published article ${label}`;
     case "article.unpublish":
       return `Unpublished article ${label}`;
-    case "article.schedule": {
-      const when =
-        typeof meta.scheduledAt === "string"
-          ? new Date(meta.scheduledAt).toLocaleString(undefined, {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })
-          : null;
-      return when
-        ? `Scheduled article ${label} for ${when}`
-        : `Scheduled article ${label}`;
-    }
     case "topic.update":
       return `Edited topic ${label}`;
     case "topic.create":

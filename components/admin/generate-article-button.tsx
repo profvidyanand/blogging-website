@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { fetchJson } from "@/lib/fetch-json";
 
 /** Placeholder used by TopicTable; full implementation in Phase 8. */
 export function GenerateArticleButton({
@@ -20,12 +21,12 @@ export function GenerateArticleButton({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
+      const { res, data } = await fetchJson<{ error?: string; article?: { id: string } }>(
         `/api/admin/topics/${topicId}/generate-article`,
         { method: "POST" },
       );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Generation failed");
+      if (!res.ok) throw new Error(data.error || "Could not create article");
+      if (!data.article?.id) throw new Error("Could not create article");
       router.push(`/admin/articles/${data.article.id}`);
       router.refresh();
     } catch (err) {
@@ -38,7 +39,7 @@ export function GenerateArticleButton({
   return (
     <div className="inline-flex flex-col gap-1">
       <Button size="sm" onClick={onClick} disabled={disabled || loading}>
-        {loading ? "Generating…" : "Generate Blog"}
+        {loading ? "Creating…" : "Create draft"}
       </Button>
       {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </div>

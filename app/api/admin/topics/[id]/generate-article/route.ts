@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateArticle } from "@/lib/ai";
-import { searchImage, trackDownload } from "@/lib/unsplash";
+import { SITE } from "@/lib/site-config";
+import { searchImageWithFallbacks, trackDownload } from "@/lib/unsplash";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { logActivity } from "@/lib/activity";
 import { jsonError, requireAdminApi } from "@/lib/api";
@@ -45,6 +46,7 @@ export async function POST(_request: Request, context: Ctx) {
     generated = await generateArticle({
       topic: topic.topic,
       categoryName: category.name,
+      categoryDescription: category.description ?? undefined,
       language: normalizeLanguage(category.language),
     });
   } catch (err) {
@@ -68,7 +70,7 @@ export async function POST(_request: Request, context: Ctx) {
   let featuredImageCredit: string | null = null;
 
   try {
-    const photo = await searchImage(topic.topic);
+    const photo = await searchImageWithFallbacks(generated.imageQueries);
     if (photo) {
       await trackDownload(photo);
       featuredImage = photo.url;
@@ -78,17 +80,7 @@ export async function POST(_request: Request, context: Ctx) {
     console.error("Image pipeline failed (continuing without image):", err);
   }
 
-  const { data: adminProfile } = await supabase
-    .from("admins")
-    .select("full_name, email")
-    .eq("id", auth.admin.id)
-    .maybeSingle();
-
-  const authorName =
-    (adminProfile as { full_name: string | null; email: string } | null)
-      ?.full_name ||
-    auth.admin.fullName ||
-    auth.admin.email;
+  const authorName = SITE.client.fullName;
 
   const faq = generated.faq as FaqItem[];
 

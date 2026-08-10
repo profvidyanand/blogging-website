@@ -9,6 +9,7 @@ import {
   FileText,
   ExternalLink,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -19,6 +20,7 @@ const contentNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/categories", label: "Categories", icon: FolderOpen },
   { href: "/admin/articles", label: "Articles", icon: FileText },
+  { href: "/admin/settings", label: "Site settings", icon: Settings },
 ];
 
 export function AdminSidebar({

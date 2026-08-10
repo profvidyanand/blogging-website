@@ -1,0 +1,116 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { SITE } from "@/lib/site-config";
+import type { Article, Category } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Sitemap",
+  description: `Browse all pages and articles on ${SITE.name}.`,
+};
+
+export default async function SitemapPage() {
+  const supabase = await createClient();
+
+  const [{ data: categories }, { data: articles }] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("name, slug")
+      .eq("status", "active")
+      .order("name"),
+    supabase
+      .from("articles")
+      .select("title, slug, published_at")
+      .eq("status", "published")
+      .order("published_at", { ascending: false }),
+  ]);
+
+  const cats = (categories ?? []) as Pick<Category, "name" | "slug">[];
+  const posts = (articles ?? []) as Pick<
+    Article,
+    "title" | "slug" | "published_at"
+  >[];
+
+  const staticPages = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+    { href: "/privacy", label: "Privacy Policy" },
+  ];
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-10">
+      <header className="space-y-3">
+        <h1 className="text-display text-foreground">Sitemap</h1>
+        <p className="text-body text-muted-foreground">
+          A complete index of pages and articles on {SITE.name}.
+        </p>
+      </header>
+
+      <section className="space-y-3">
+        <h2 className="text-h2 text-foreground">Pages</h2>
+        <ul className="space-y-2">
+          {staticPages.map((page) => (
+            <li key={page.href}>
+              <Link
+                href={page.href}
+                className="text-body text-primary hover:underline"
+              >
+                {page.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {cats.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="text-h2 text-foreground">Categories</h2>
+          <ul className="space-y-2">
+            {cats.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/category/${c.slug}`}
+                  className="text-body text-primary hover:underline"
+                >
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="space-y-3">
+        <h2 className="text-h2 text-foreground">Articles</h2>
+        {posts.length === 0 ? (
+          <p className="text-body-sm text-muted-foreground">
+            No published articles yet.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {posts.map((post) => (
+              <li key={post.slug}>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="text-body text-primary hover:underline"
+                >
+                  {post.title}
+                </Link>
+                {post.published_at ? (
+                  <span className="ml-2 text-caption text-muted-foreground">
+                    {new Date(post.published_at).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}

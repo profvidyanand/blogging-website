@@ -55,7 +55,7 @@ export default async function CategoryDetailPage({ params }: Props) {
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="text-body-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Generate topics
+            Suggest topics
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -69,7 +69,7 @@ export default async function CategoryDetailPage({ params }: Props) {
           />
           {cat.status !== "active" ? (
             <p className="mt-3 rounded-md bg-warning/15 px-3 py-2 text-body-sm text-warning-foreground">
-              Inactive categories cannot generate new topics.
+              Inactive categories cannot add new topics.
             </p>
           ) : null}
         </CardContent>

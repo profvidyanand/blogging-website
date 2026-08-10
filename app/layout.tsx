@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE } from "@/lib/site-config";
 import "katex/dist/katex.min.css";
 import "./blog-content.css";
 import "./globals.css";
@@ -21,11 +22,20 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE.url),
   title: {
-    default: "AI Blog Platform",
-    template: "%s | AI Blog Platform",
+    default: SITE.name,
+    template: `%s | ${SITE.name}`,
   },
-  description: "AI-assisted SEO blog generator and public publishing platform",
+  description: SITE.description,
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: SITE.url,
+    siteName: SITE.name,
+    title: SITE.name,
+    description: SITE.description,
+  },
 };
 
 export default function RootLayout({

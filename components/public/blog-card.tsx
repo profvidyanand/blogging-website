@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getCategoryAccent } from "@/lib/category-colors";
+import { formatViewCount } from "@/lib/format-view-count";
 
 export type BlogCardProps = {
   title: string;
@@ -10,6 +12,7 @@ export type BlogCardProps = {
   featuredImage?: string | null;
   categoryName?: string | null;
   publishedAt?: string | null;
+  viewCount?: number;
   href?: string;
   className?: string;
 };
@@ -28,6 +31,7 @@ export function BlogCard({
   featuredImage,
   categoryName,
   publishedAt,
+  viewCount,
   href,
   className,
 }: BlogCardProps) {
@@ -79,6 +83,12 @@ export function BlogCard({
             </time>
           ) : null}
           {readTime ? <span>{readTime}</span> : null}
+          {viewCount != null ? (
+            <span className="inline-flex items-center gap-1">
+              <Eye className="size-3" aria-hidden />
+              {formatViewCount(viewCount)}
+            </span>
+          ) : null}
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">
           <Link href={link} className="hover:text-primary">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchJson } from "@/lib/fetch-json";
 
 export function GetTopicsForm({
   categoryId,
@@ -24,13 +25,15 @@ export function GetTopicsForm({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/categories/${categoryId}/topics`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate topics");
+      const { res, data } = await fetchJson<{ error?: string }>(
+        `/api/admin/categories/${categoryId}/topics`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count }),
+        },
+      );
+      if (!res.ok) throw new Error(data.error || "Failed to suggest topics");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
@@ -57,8 +60,8 @@ export function GetTopicsForm({
       <Button type="submit" disabled={disabled || loading}>
         <LoadingLabel
           loading={loading}
-          label="Get Topics"
-          loadingLabel="Getting topics…"
+          label="Suggest topics"
+          loadingLabel="Suggesting topics…"
         />
       </Button>
       {error ? <p className="w-full text-sm text-destructive">{error}</p> : null}

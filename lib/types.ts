@@ -162,6 +162,7 @@ export type Database = {
           featured_image: string | null;
           featured_image_credit: string | null;
           author_name: string | null;
+          view_count: number;
           status: "draft" | "scheduled" | "published" | "unpublished";
           scheduled_at: string | null;
           published_at: string | null;
@@ -184,6 +185,7 @@ export type Database = {
           featured_image?: string | null;
           featured_image_credit?: string | null;
           author_name?: string | null;
+          view_count?: number;
           status?: "draft" | "scheduled" | "published" | "unpublished";
           scheduled_at?: string | null;
           published_at?: string | null;
@@ -206,11 +208,39 @@ export type Database = {
           featured_image?: string | null;
           featured_image_credit?: string | null;
           author_name?: string | null;
+          view_count?: number;
           status?: "draft" | "scheduled" | "published" | "unpublished";
           scheduled_at?: string | null;
           published_at?: string | null;
           created_by?: string | null;
           created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      site_settings: {
+        Row: {
+          id: number;
+          facebook_url: string;
+          instagram_url: string;
+          twitter_url: string;
+          youtube_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          facebook_url?: string;
+          instagram_url?: string;
+          twitter_url?: string;
+          youtube_url?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          facebook_url?: string;
+          instagram_url?: string;
+          twitter_url?: string;
+          youtube_url?: string;
           updated_at?: string;
         };
         Relationships: [];
@@ -252,6 +282,10 @@ export type Database = {
         Args: { target_category_id: string };
         Returns: boolean;
       };
+      increment_article_view_count: {
+        Args: { article_slug: string };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -267,5 +301,6 @@ export type CategoryAssignment = Tables<"category_assignments">;
 export type Topic = Tables<"topics">;
 export type Article = Tables<"articles">;
 export type ActivityLog = Tables<"activity_log">;
+export type SiteSettingsRow = Tables<"site_settings">;
 
 export type FaqItem = { question: string; answer: string };

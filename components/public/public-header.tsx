@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Loader2, Menu, Search, Sparkles } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { Loader2, Menu, Search, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -13,7 +13,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { SITE } from "@/lib/site-config";
 import type { Category } from "@/lib/types";
+import { CategoryNav } from "@/components/public/category-nav";
 
 export function PublicHeader({ categories }: { categories: Category[] }) {
   const [open, setOpen] = useState(false);
@@ -21,6 +23,13 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
   const [isSearching, startSearchTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (pathname === "/") {
+      setQ(searchParams.get("q") ?? "");
+    }
+  }, [pathname, searchParams]);
 
   const isHomeActive = pathname === "/";
   const activeCategorySlug = pathname?.startsWith("/category/")
@@ -29,10 +38,9 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
+    const query = q.trim();
     startSearchTransition(() => {
-      router.push(`/search?${params.toString()}`);
+      router.push(query ? `/?q=${encodeURIComponent(query)}` : "/");
       setOpen(false);
     });
   }
@@ -42,10 +50,10 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 lg:gap-5">
         <Link href="/" className="flex shrink-0 items-center gap-2 text-foreground">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-card">
-            <Sparkles className="size-4" />
+            <BookOpen className="size-4" />
           </span>
           <span className="hidden text-lg font-bold tracking-tight sm:inline">
-            AI Blog Platform
+            {SITE.name}
           </span>
         </Link>
 
@@ -69,48 +77,22 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
               ) : null}
             </div>
           </form>
-          <Link
-            href="/search"
-            className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="flex size-9 shrink-0 lg:hidden"
             aria-label="Search"
+            onClick={() => setOpen(true)}
           >
             <Search className="size-4" />
-          </Link>
+          </Button>
 
-          <nav className="flex min-w-0 items-center gap-1 overflow-x-auto">
-            <Link
-              href="/"
-              className={cn(
-                "shrink-0 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-                isHomeActive
-                  ? "text-primary"
-                  : "text-foreground/80 hover:text-primary"
-              )}
-            >
-              Home
-            </Link>
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/category/${c.slug}`}
-                className={cn(
-                  "shrink-0 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-                  activeCategorySlug === c.slug
-                    ? "text-primary"
-                    : "text-foreground/80 hover:text-primary"
-                )}
-              >
-                {c.name}
-              </Link>
-            ))}
-          </nav>
-
-          <Link
-            href="/admin"
-            className={cn(buttonVariants({ size: "sm" }), "shrink-0 font-medium")}
-          >
-            Admin
-          </Link>
+          <CategoryNav
+            categories={categories}
+            isHomeActive={isHomeActive}
+            activeCategorySlug={activeCategorySlug}
+          />
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -178,14 +160,31 @@ export function PublicHeader({ categories }: { categories: Category[] }) {
                   ))}
                 </>
               ) : null}
+              <Link
+                href="/about"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex min-h-[44px] items-center rounded-md px-3 py-3 text-body-sm font-medium",
+                  pathname === "/about"
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                About
+              </Link>
+              <Link
+                href="/contact"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex min-h-[44px] items-center rounded-md px-3 py-3 text-body-sm font-medium",
+                  pathname === "/contact"
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground hover:bg-muted"
+                )}
+              >
+                Contact
+              </Link>
             </nav>
-            <Link
-              href="/admin"
-              onClick={() => setOpen(false)}
-              className={cn(buttonVariants(), "mt-4 min-h-[44px] w-full")}
-            >
-              Admin
-            </Link>
           </SheetContent>
         </Sheet>
       </div>

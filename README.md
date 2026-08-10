@@ -1,7 +1,7 @@
 # AI Blog Platform
 
 Next.js (App Router) SEO blog + admin panel for AI-assisted topic/article generation.
-Deployed to Cloudflare Workers via OpenNext. Backed by Supabase.
+Deployed on Vercel. Backed by Supabase.
 
 ## Setup
 
@@ -21,25 +21,16 @@ Quick start:
 |--------|---------|
 | `npm run dev` | Local Next.js development |
 | `npm run build` | Production Next.js build |
-| `npm run deploy` | OpenNext build + Cloudflare Workers deploy |
-| `npm run preview` | OpenNext build + local Workers preview |
+| `npm run start` | Run production build locally |
 
-## Deploy (Phase 13 checklist)
+## Deploy (Vercel)
 
-1. Put secrets (never commit):
-
-```bash
-npx wrangler secret put SUPABASE_SECRET_KEY
-npx wrangler secret put AI_API_KEY
-npx wrangler secret put UNSPLASH_ACCESS_KEY
-npx wrangler secret put CRON_SECRET
-```
-
-2. Set non-secret `vars` in `wrangler.jsonc` (`NEXT_PUBLIC_*`, `AI_API_BASE_URL`, `AI_MODEL`).
-3. Deploy: `npm run deploy`
+1. Connect the GitHub repo to [Vercel](https://vercel.com).
+2. Set environment variables from [`.env.example`](.env.example) in the Vercel project settings.
+3. Deploy (automatic on push to your production branch).
 4. Smoke test: login → Get Topics → Generate Blog → Publish → open public URL; confirm Unsplash featured image loads.
-5. Cron: `npx wrangler dev --test-scheduled` then hit the scheduled endpoint to verify auto-publish.
+5. Update Supabase Auth redirect URLs to include your Vercel domain.
 
 ## Admin flow
 
-`/admin/login` → Categories → Get Topics → Generate Blog → Preview/Edit → Publish or Schedule.
+`/admin/login` → Categories → Get Topics → Generate Blog → Preview/Edit → Publish.

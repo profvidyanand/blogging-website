@@ -50,7 +50,7 @@ export default async function ArticlesPage({
     <div>
       <PageHeader
         title="Blog Management"
-        description="Filter, preview, publish, schedule, and edit articles."
+        description="Filter, preview, publish, and edit articles."
       />
       <ArticlesClient articles={rows} categories={cats} filters={filters} />
     </div>

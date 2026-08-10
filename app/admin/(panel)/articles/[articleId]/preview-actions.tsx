@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ScheduleDialog } from "@/components/admin/schedule-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { BlogArticleContent } from "@/components/public/blog-article-content";
 import { BlogArticleFaq } from "@/components/public/blog-article-faq";
@@ -21,7 +20,6 @@ export function ArticlePreviewActions({
   category: Category | null;
 }) {
   const router = useRouter();
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSeo, setShowSeo] = useState(false);
@@ -66,18 +64,6 @@ export function ArticlePreviewActions({
     }
   }
 
-  async function schedule(iso: string) {
-    const res = await fetch(`/api/admin/articles/${article.id}/schedule`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scheduledAt: iso }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Schedule failed");
-    toast.success("Article scheduled");
-    router.refresh();
-  }
-
   const faq = (Array.isArray(article.faq) ? article.faq : []) as FaqItem[];
 
   return (
@@ -105,13 +91,6 @@ export function ArticlePreviewActions({
                 loadingLabel="Unpublishing…"
               />
             </Button>
-          ) : article.status === "scheduled" ? (
-            <span className="text-body-sm text-muted-foreground">
-              Scheduled for{" "}
-              {article.scheduled_at
-                ? new Date(article.scheduled_at).toLocaleString()
-                : "—"}
-            </span>
           ) : (
             <Button onClick={publish} disabled={loading} size="sm">
               <LoadingLabel
@@ -121,14 +100,6 @@ export function ArticlePreviewActions({
               />
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setScheduleOpen(true)}
-            disabled={loading}
-          >
-            Schedule
-          </Button>
           <div className="ml-auto">
             <StatusBadge status={article.status} />
           </div>
@@ -237,12 +208,6 @@ export function ArticlePreviewActions({
           </div>
         </article>
       </div>
-
-      <ScheduleDialog
-        open={scheduleOpen}
-        onOpenChange={setScheduleOpen}
-        onSchedule={schedule}
-      />
     </div>
   );
 }

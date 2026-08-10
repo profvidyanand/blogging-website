@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingLabel } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchJson } from "@/lib/fetch-json";
 import { toast } from "@/lib/toast";
 
 export function AddTopicForm({
@@ -26,12 +27,14 @@ export function AddTopicForm({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/categories/${categoryId}/topics`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: trimmed }),
-      });
-      const data = await res.json();
+      const { res, data } = await fetchJson<{ error?: string }>(
+        `/api/admin/categories/${categoryId}/topics`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: trimmed }),
+        },
+      );
       if (!res.ok) throw new Error(data.error || "Failed to add topic");
       setTopic("");
       toast.success("Topic added");

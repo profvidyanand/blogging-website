@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { Eye, Mail, Share2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BlogCard } from "@/components/public/blog-card";
+import { ArticleViewTracker } from "@/components/public/article-view-tracker";
 import { AudioPlayer } from "@/components/public/audio-player";
 import { BlogArticleContent } from "@/components/public/blog-article-content";
 import { BlogArticleFaq } from "@/components/public/blog-article-faq";
 import { buttonVariants } from "@/components/ui/button";
-import { Mail, Share2 } from "lucide-react";
 import { getCategoryAccent } from "@/lib/category-colors";
+import { formatViewCount } from "@/lib/format-view-count";
+import { SITE } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 import type { Article, Category, FaqItem } from "@/lib/types";
 
@@ -67,11 +70,13 @@ export default async function BlogDetailPage({ params }: Props) {
     .limit(3);
 
   const faq = (Array.isArray(post.faq) ? post.faq : []) as FaqItem[];
-  const shareUrl = `/blog/${post.slug}`;
+  const shareUrl = `${SITE.url}/blog/${post.slug}`;
   const shareText = encodeURIComponent(post.title);
+  const viewCount = post.view_count ?? 0;
 
   return (
     <article className="blog-article mx-auto max-w-3xl space-y-8">
+      <ArticleViewTracker slug={post.slug} />
       {post.featured_image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -108,6 +113,13 @@ export default async function BlogDetailPage({ params }: Props) {
               })}
             </time>
           ) : null}
+          {post.author_name ? (
+            <span>{post.author_name}</span>
+          ) : null}
+          <span className="inline-flex items-center gap-1">
+            <Eye className="size-3.5" aria-hidden />
+            {formatViewCount(viewCount)}
+          </span>
         </div>
         {post.featured_image_credit ? (
           <p className="text-caption">{post.featured_image_credit}</p>
@@ -162,6 +174,7 @@ export default async function BlogDetailPage({ params }: Props) {
                 featuredImage={r.featured_image}
                 categoryName={cat?.name}
                 publishedAt={r.published_at}
+                viewCount={r.view_count ?? 0}
               />
             ))}
           </div>
