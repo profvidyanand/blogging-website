@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, LogIn } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { SocialLinksRow } from "@/components/public/social-links-row";
 import { SITE } from "@/lib/site-config";
 import type { SocialLinks } from "@/lib/site-config";
@@ -103,24 +105,45 @@ export function PublicFooter({
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/login"
+                  className="text-body-sm font-medium text-foreground transition-colors hover:text-primary"
+                >
+                  Admin Login
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <Separator className="my-8" />
 
-        <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-          <p className="text-caption">
-            &copy; {year} {SITE.name}. All rights reserved.
-          </p>
-          <p className="text-caption">
-            <a
-              href={`mailto:${SITE.email}`}
-              className="text-muted-foreground transition-colors hover:text-primary"
-            >
-              {SITE.email}
-            </a>
-          </p>
+        <div className="flex flex-col items-center gap-5">
+          <Link
+            href="/admin/login"
+            className={cn(
+              buttonVariants({ variant: "default", size: "lg" }),
+              "min-h-12 gap-2 px-6 text-base font-semibold",
+            )}
+          >
+            <LogIn className="size-5" aria-hidden />
+            Admin Login
+          </Link>
+
+          <div className="flex w-full flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
+            <p className="text-caption">
+              &copy; {year} {SITE.name}. All rights reserved.
+            </p>
+            <p className="text-caption">
+              <a
+                href={`mailto:${SITE.email}`}
+                className="text-muted-foreground transition-colors hover:text-primary"
+              >
+                {SITE.email}
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
