@@ -27,6 +27,8 @@ export function formatActivityMessage(
   switch (log.action) {
     case "article.generate":
       return `Generated new article ${label}`;
+    case "article.create":
+      return `Created article ${label} for manual writing`;
     case "article.update":
       return `Edited article ${label}`;
     case "article.delete":

@@ -6,7 +6,8 @@ type Status =
   | "active"
   | "inactive"
   | "pending"
-  | "generating";
+  | "generating"
+  | "generated";
 
 const statusStyles: Record<Status, string> = {
   published: "bg-success/10 text-success",
@@ -15,6 +16,7 @@ const statusStyles: Record<Status, string> = {
   inactive: "bg-muted text-muted-foreground",
   pending: "bg-info/10 text-info",
   generating: "bg-info/10 text-info",
+  generated: "bg-success/10 text-success",
 };
 
 const statusLabels: Record<Status, string> = {
@@ -24,6 +26,7 @@ const statusLabels: Record<Status, string> = {
   inactive: "Inactive",
   pending: "Pending",
   generating: "Generating",
+  generated: "Generated",
 };
 
 export function StatusBadge({
