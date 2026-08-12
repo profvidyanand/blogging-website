@@ -1,3 +1,4 @@
+import { BlogArticleContent } from "@/components/public/blog-article-content";
 import type { FaqItem } from "@/lib/types";
 
 export function BlogArticleFaq({ items }: { items: FaqItem[] }) {
@@ -26,9 +27,10 @@ export function BlogArticleFaq({ items }: { items: FaqItem[] }) {
               </span>
             </summary>
             <div className="border-t border-border px-5 pb-4 pt-3">
-              <p className="blog-content !max-w-none !text-base !leading-relaxed text-muted-foreground">
-                {item.answer}
-              </p>
+              <BlogArticleContent
+                html={item.answer}
+                className="!max-w-none !text-base !leading-relaxed text-muted-foreground"
+              />
             </div>
           </details>
         ))}

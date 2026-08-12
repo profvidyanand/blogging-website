@@ -286,6 +286,15 @@ export default async function AboutPage() {
               {SITE.email}
             </a>
             <p className="mt-1 text-body-sm text-muted-foreground">
+              Phone:{" "}
+              <a
+                href={`tel:${SITE.phone.replace(/\s/g, "")}`}
+                className="text-primary hover:underline"
+              >
+                {SITE.phone}
+              </a>
+            </p>
+            <p className="mt-1 text-body-sm text-muted-foreground">
               Academic:{" "}
               <a
                 href={`mailto:${client.academicEmail}`}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { SITE } from "@/lib/site-config";
 
 export const metadata: Metadata = {
@@ -34,6 +34,24 @@ export default function ContactPage() {
             </a>
             <p className="mt-1 text-body-sm text-muted-foreground">
               For general inquiries, speaking requests, and media contact.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Phone className="size-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-foreground">Phone</h2>
+            <a
+              href={`tel:${SITE.phone.replace(/\s/g, "")}`}
+              className="mt-1 inline-block text-body text-primary hover:underline"
+            >
+              {SITE.phone}
+            </a>
+            <p className="mt-1 text-body-sm text-muted-foreground">
+              Call or message for urgent inquiries.
             </p>
           </div>
         </div>

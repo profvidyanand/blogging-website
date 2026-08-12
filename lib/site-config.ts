@@ -7,6 +7,7 @@ export const SITE = {
   description:
     "Articles and teachings from Prof. Dr. Vidyaprasad Shukla (Swami Vidyanand Paramahans) on spirituality, philosophy, and life guidance.",
   email: "profmastervidyanand@gmail.com",
+  phone: "+91 8446479651",
   client: {
     fullName: "Prof. Dr. Vidya Prasad Shukla",
     sannyasName: "Swami Vidyanand Paramahans",
