@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingLabel } from "@/components/ui/spinner";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { resolveInlineImage } from "@/lib/inline-article-image";
+import { fetchJson } from "@/lib/fetch-json";
 import { toast } from "@/lib/toast";
 import type { Article, FaqItem } from "@/lib/types";
 
@@ -37,6 +38,7 @@ export function ArticleEditor({ article }: { article: Article }) {
     faqInitial.length ? faqInitial : [{ question: "", answer: "" }],
   );
   const [loading, setLoading] = useState(false);
+  const [generatingFaq, setGeneratingFaq] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
 
@@ -85,6 +87,33 @@ export function ArticleEditor({ article }: { article: Article }) {
       toast.error(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onGenerateFaq() {
+    if (!title.trim()) {
+      toast.error("Add a title before generating FAQs");
+      return;
+    }
+
+    setGeneratingFaq(true);
+    try {
+      const { res, data } = await fetchJson<{ error?: string; faq?: FaqItem[] }>(
+        `/api/admin/articles/${article.id}/generate-faq`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, content }),
+        },
+      );
+      if (!res.ok) throw new Error(data.error || "FAQ generation failed");
+      if (!data.faq?.length) throw new Error("No FAQs were generated");
+      setFaq(data.faq);
+      toast.success("FAQs generated — review and save when ready");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate FAQs");
+    } finally {
+      setGeneratingFaq(false);
     }
   }
 
@@ -177,16 +206,32 @@ export function ArticleEditor({ article }: { article: Article }) {
       </Card>
 
       <Card className="shadow-card">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>FAQ</CardTitle>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => setFaq([...faq, { question: "", answer: "" }])}
-          >
-            Add FAQ
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={loading || generatingFaq || !title.trim()}
+              onClick={onGenerateFaq}
+            >
+              <LoadingLabel
+                loading={generatingFaq}
+                label="Get AI FAQ"
+                loadingLabel="Generating…"
+              />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={generatingFaq}
+              onClick={() => setFaq([...faq, { question: "", answer: "" }])}
+            >
+              Add FAQ
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {faq.map((item, i) => (

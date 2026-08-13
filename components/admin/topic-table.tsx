@@ -125,7 +125,7 @@ export function TopicTable({ topics }: { topics: Topic[] }) {
                         Creating draft…
                       </>
                     ) : (
-                      "Create article draft"
+                      "Generate with Ai"
                     )}
                   </Button>
                   <Button

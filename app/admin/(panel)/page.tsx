@@ -1,40 +1,17 @@
-import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/admin/page-header";
+import { RecentActivityCard } from "@/components/admin/recent-activity-card";
+import { RecentPublishedBlogsCard } from "@/components/admin/recent-published-blogs-card";
 import { StatCard } from "@/components/admin/stat-card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { formatActivityMessage } from "@/lib/activity-labels";
 import type { ActivityLog, Article } from "@/lib/types";
 import {
   FolderOpen,
   FileText,
   CheckCircle,
   FilePen,
-  Sparkles,
-  Pencil,
-  Trash2,
-  EyeOff,
-  CheckCircle2,
-  FolderPlus,
-  type LucideIcon,
 } from "lucide-react";
-
-const ACTIVITY_ICONS: Record<string, LucideIcon> = {
-  "article.generate": Sparkles,
-  "article.update": Pencil,
-  "article.delete": Trash2,
-  "article.publish": CheckCircle2,
-  "article.unpublish": EyeOff,
-  "topic.update": Pencil,
-  "topic.delete": Trash2,
-  "topics.generate": Sparkles,
-  "category.create": FolderPlus,
-  "category.update": Pencil,
-  "category.delete": Trash2,
-};
 
 export default async function AdminDashboardPage() {
   const adminUser = await requireAdmin();
@@ -156,74 +133,12 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentActivity.length === 0 ? (
-              <EmptyState
-                title="No activity yet"
-                description="Actions you take will appear here."
-              />
-            ) : (
-              <ul className="divide-y divide-border">
-                {recentActivity.map((a) => {
-                  const Icon = ACTIVITY_ICONS[a.action] ?? Pencil;
-                  const label = a.entity_id ? entityLabels.get(a.entity_id) : undefined;
-                  return (
-                    <li
-                      key={a.id}
-                      className="flex items-start justify-between gap-3 py-2.5 text-body-sm first:pt-0 last:pb-0"
-                    >
-                      <span className="flex items-start gap-2.5">
-                        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <Icon className="size-3.5" />
-                        </span>
-                        <span className="text-foreground">
-                          {formatActivityMessage(a, label)}
-                        </span>
-                      </span>
-                      <time className="shrink-0 text-caption">
-                        {new Date(a.created_at).toLocaleString(undefined, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </time>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <RecentActivityCard
+          activities={recentActivity}
+          entityLabels={Object.fromEntries(entityLabels)}
+        />
 
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Recent published blogs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentPublished.length === 0 ? (
-              <EmptyState
-                title="No published articles"
-                description="Publish an article to see it here."
-              />
-            ) : (
-              <ul className="divide-y divide-border">
-                {recentPublished.map((a) => (
-                  <li key={a.id} className="py-2.5 first:pt-0 last:pb-0">
-                    <Link
-                      href={`/admin/articles/${a.id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {a.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <RecentPublishedBlogsCard articles={recentPublished} />
       </div>
     </div>
   );

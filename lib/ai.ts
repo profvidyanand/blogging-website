@@ -277,3 +277,52 @@ export async function generateArticle(input: {
 
   return chatJsonWithRetry(system, user, articleSchema, articleMaxTokens());
 }
+
+const faqOnlySchema = z.object({
+  faq: z
+    .array(
+      z.object({
+        question: z.string().min(1),
+        answer: z.string().min(1),
+      }),
+    )
+    .min(1),
+});
+
+function faqMaxTokens(): number {
+  return Math.min(2048, Number(process.env.AI_MAX_TOKENS || "4096"));
+}
+
+function stripHtmlForPrompt(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function generateFaq(input: {
+  title: string;
+  content?: string;
+  languageLabel: string;
+}): Promise<{ question: string; answer: string }[]> {
+  const system = `You are an SEO content writer. Respond ONLY with valid JSON matching this schema:
+{
+  "faq": [{"question": string, "answer": string}]
+}`;
+
+  const plainContent = input.content ? stripHtmlForPrompt(input.content) : "";
+  const user = [
+    `Generate exactly 4–5 FAQ items for a blog article titled: "${input.title}".`,
+    plainContent
+      ? `Use the article body below as context when writing accurate, relevant answers:\n${plainContent.slice(0, 8000)}`
+      : "Base the FAQs on what readers would likely ask about this topic.",
+    `Write all questions and answers in ${input.languageLabel} only.`,
+    "Answers should be concise but helpful (2–4 sentences each).",
+    "Questions should be natural search-style queries related to the title and topic.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const result = await chatJsonWithRetry(system, user, faqOnlySchema, faqMaxTokens());
+  return result.faq.slice(0, 5);
+}
