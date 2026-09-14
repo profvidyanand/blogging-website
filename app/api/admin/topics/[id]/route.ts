@@ -7,7 +7,7 @@ import { jsonError, requireAdminApi } from "@/lib/api";
 type Ctx = { params: Promise<{ id: string }> };
 
 const patchSchema = z.object({
-  topic: z.string().min(1).max(500),
+  topic: z.string().min(1).max(2000),
 });
 
 export async function PATCH(request: Request, context: Ctx) {

@@ -28,7 +28,7 @@ export async function GET(_request: Request, context: Ctx) {
 
 const postSchema = z.union([
   z.object({ count: z.number().int().min(1).max(100) }),
-  z.object({ topic: z.string().min(1).max(500) }),
+  z.object({ topic: z.string().min(1).max(2000) }),
 ]);
 
 export async function POST(request: Request, context: Ctx) {
